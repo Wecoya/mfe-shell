@@ -19,6 +19,9 @@ jobs:
 
       - run: npm ci
 
+      - name: Validate shell scripts
+        run: shellcheck docker-entrypoint.sh
+
       - name: Lint
         run: npm run lint
 

@@ -13,7 +13,7 @@ if [ -n "$MFE_REMOTES" ]; then
   "remotes": $MFE_REMOTES,
   "keycloak": {
     "url": "${KEYCLOAK_URL:-https://auth.wecoya.de}",
-    "realm": "${KEYCLOAK_REALM:-wecoya}",
+    "realm": "${KEYCLOAK_REALM:-psc-platform}",
     "clientId": "${KEYCLOAK_CLIENT_ID:-mfe-shell}"
   }
 }
@@ -26,13 +26,13 @@ elif [ -f "/config/remotes.json" ]; then
   "remotes": $REMOTES,
   "keycloak": {
     "url": "${KEYCLOAK_URL:-https://auth.wecoya.de}",
-    "realm": "${KEYCLOAK_REALM:-wecoya}",
+    "realm": "${KEYCLOAK_REALM:-psc-platform}",
     "clientId": "${KEYCLOAK_CLIENT_ID:-mfe-shell}"
   }
 }
 EOF
 else
-  echo '{"remotes":{},"keycloak":{"url":"https://auth.wecoya.de","realm":"wecoya","clientId":"mfe-shell"}}' > "$CONFIG_FILE"
+  echo '{"remotes":{},"keycloak":{"url":"https://auth.wecoya.de","realm":"psc-platform","clientId":"mfe-shell"}}' > "$CONFIG_FILE"
 fi
 
 exec "$@"

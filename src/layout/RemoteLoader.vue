@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted, defineAsyncComponent, shallowRef, type Component } from 'vue'
+import { ref, onMounted, onUnmounted, shallowRef, type Component } from 'vue'
 
 const props = defineProps<{
   remoteName: string
@@ -10,6 +10,7 @@ const isLoading = ref(true)
 const hasError = ref(false)
 const errorMessage = ref('')
 const RemoteComponent = shallowRef<Component | null>(null)
+const injectedScripts: HTMLScriptElement[] = []
 
 onMounted(async () => {
   try {
@@ -24,8 +25,14 @@ onMounted(async () => {
   }
 })
 
+onUnmounted(() => {
+  for (const script of injectedScripts) {
+    script.parentNode?.removeChild(script)
+  }
+  injectedScripts.length = 0
+})
+
 async function loadRemoteModule(name: string, url: string): Promise<{ default: Component }> {
-  // Dynamic import of remote entry
   const container = await loadRemoteEntry(url)
   const factory = await container.get('./App')
   return factory()
@@ -39,6 +46,7 @@ async function loadRemoteEntry(url: string): Promise<{ get: (module: string) => 
     script.async = true
 
     script.onload = () => {
+      injectedScripts.push(script)
       const name = url.split('/').pop()?.replace('.js', '') ?? ''
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const container = (window as any)[name]
@@ -63,10 +71,16 @@ async function loadRemoteEntry(url: string): Promise<{ get: (module: string) => 
 }
 
 function retry(): void {
+  // Remove previously injected scripts before retrying
+  for (const script of injectedScripts) {
+    script.parentNode?.removeChild(script)
+  }
+  injectedScripts.length = 0
+
   hasError.value = false
   isLoading.value = true
   errorMessage.value = ''
-  // Re-trigger mount
+
   loadRemoteModule(props.remoteName, props.remoteUrl)
     .then((module) => {
       RemoteComponent.value = module.default || module
