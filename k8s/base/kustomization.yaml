@@ -5,7 +5,6 @@ namespace: mfe-shell
 
 resources:
   - namespace.yaml
-  - ghcr-pull-secret.yaml
   - deployment.yaml
   - service.yaml
   - configmap.yaml

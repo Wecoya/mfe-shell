@@ -26,8 +26,6 @@ spec:
         app.kubernetes.io/part-of: wecoya-platform
     spec:
       automountServiceAccountToken: false
-      imagePullSecrets:
-        - name: ghcr-pull-secret
       containers:
         - name: nginx
           image: ghcr.io/wecoya/mfe-shell:0.1.0
