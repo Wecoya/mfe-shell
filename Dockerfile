@@ -8,7 +8,10 @@ COPY . .
 RUN npm run build
 
 # Stage 2: Serve
-FROM nginx:1.27-alpine
+FROM nginx:1.27-alpine3.21
+
+# Upgrade base packages to patch known CVEs
+RUN apk upgrade --no-cache
 
 # Remove default nginx config
 RUN rm /etc/nginx/conf.d/default.conf
