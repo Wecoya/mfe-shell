@@ -17,6 +17,7 @@ metadata:
     app.kubernetes.io/managed-by: argocd
   annotations:
     cert-manager.io/cluster-issuer: letsencrypt-prod-dns01-app
+    external-dns.alpha.kubernetes.io/exclude: "true"
 spec:
   ingressClassName: cilium
   tls:
