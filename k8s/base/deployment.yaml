@@ -6,7 +6,7 @@ metadata:
   labels:
     app.kubernetes.io/name: mfe-shell
     app.kubernetes.io/instance: mfe-shell
-    app.kubernetes.io/version: "0.1.1"
+    app.kubernetes.io/version: "0.1.2"
     app.kubernetes.io/component: frontend
     app.kubernetes.io/part-of: wecoya-platform
     app.kubernetes.io/managed-by: argocd
@@ -22,7 +22,7 @@ spec:
       labels:
         app.kubernetes.io/name: mfe-shell
         app.kubernetes.io/instance: mfe-shell
-        app.kubernetes.io/version: "0.1.1"
+        app.kubernetes.io/version: "0.1.2"
         app.kubernetes.io/component: frontend
         app.kubernetes.io/part-of: wecoya-platform
       annotations: {}
@@ -32,7 +32,7 @@ spec:
         - name: ghcr-pull-secret
       containers:
         - name: nginx
-          image: ghcr.io/wecoya/mfe-shell:0.1.1
+          image: ghcr.io/wecoya/mfe-shell:0.1.2
           imagePullPolicy: Always
           ports:
             - name: http

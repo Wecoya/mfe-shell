@@ -1,6 +1,9 @@
 #!/bin/sh
 set -e
 
+# Create nginx temp directories (emptyDir at /tmp starts empty)
+mkdir -p /tmp/nginx/client_body /tmp/nginx/proxy /tmp/nginx/fastcgi /tmp/nginx/uwsgi /tmp/nginx/scgi
+
 # Generate config.json from environment variables
 # MFE_REMOTES is a JSON object of remote names to URLs
 # e.g. MFE_REMOTES='{"claims":"https://claims.wecoya.de/remoteEntry.js"}'
