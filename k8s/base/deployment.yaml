@@ -12,6 +12,7 @@ metadata:
     app.kubernetes.io/managed-by: argocd
 spec:
   replicas: 2
+  progressDeadlineSeconds: 300
   selector:
     matchLabels:
       app.kubernetes.io/name: mfe-shell
@@ -24,6 +25,8 @@ spec:
         app.kubernetes.io/version: "0.1.0"
         app.kubernetes.io/component: frontend
         app.kubernetes.io/part-of: wecoya-platform
+      annotations:
+        kubectl.kubernetes.io/restartedAt: "2026-05-23T03:30:00Z"
     spec:
       automountServiceAccountToken: false
       containers:
