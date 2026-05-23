@@ -10,7 +10,8 @@ metadata:
     app.kubernetes.io/part-of: wecoya-platform
     app.kubernetes.io/managed-by: argocd
   annotations:
-    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+    cert-manager.io/cluster-issuer: letsencrypt-prod-dns01
+    ingress.cilium.io/force-https: "disabled"
 spec:
   ingressClassName: cilium
   tls:
