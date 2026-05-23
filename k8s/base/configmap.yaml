@@ -10,7 +10,7 @@ metadata:
     app.kubernetes.io/part-of: wecoya-platform
     app.kubernetes.io/managed-by: argocd
 data:
-  KEYCLOAK_URL: "https://auth.wecoya.de"
+  KEYCLOAK_URL: "https://id.plattform.wecoya.online/auth"
   KEYCLOAK_REALM: "psc-platform"
   KEYCLOAK_CLIENT_ID: "mfe-shell"
-  MFE_REMOTES: '{"claims":"https://claims.wecoya.de/remoteEntry.js"}'
+  MFE_REMOTES: '{}'
