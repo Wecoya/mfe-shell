@@ -1,1 +1,0 @@
-{"root":["./src/main.ts","./src/auth/keycloak.ts","./src/federation/remote-config.ts","./src/router/index.ts","./src/store/user.ts","./src/app.vue","./src/auth/authguard.vue","./src/layout/appshell.vue","./src/layout/remoteloader.vue","./src/views/dashboard.vue","./env.d.ts"],"version":"5.9.3"}
