@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: mfe-shell-config
+  namespace: mfe-shell
+  labels:
+    app.kubernetes.io/name: mfe-shell
+    app.kubernetes.io/instance: mfe-shell
+    app.kubernetes.io/component: frontend
+    app.kubernetes.io/part-of: wecoya-platform
+    app.kubernetes.io/managed-by: argocd
+data:
+  KEYCLOAK_URL: "https://auth.wecoya.de"
+  KEYCLOAK_REALM: "wecoya"
+  KEYCLOAK_CLIENT_ID: "mfe-shell"
+  MFE_REMOTES: '{"claims":"https://claims.wecoya.de/remoteEntry.js"}'

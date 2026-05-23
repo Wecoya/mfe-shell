@@ -1,0 +1,50 @@
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: mfe-shell-default-deny
+  namespace: mfe-shell
+  labels:
+    app.kubernetes.io/name: mfe-shell
+    app.kubernetes.io/part-of: wecoya-platform
+    app.kubernetes.io/managed-by: argocd
+spec:
+  podSelector: {}
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress: []
+  egress:
+    - to:
+        - namespaceSelector: {}
+      ports:
+        - protocol: TCP
+          port: 53
+        - protocol: UDP
+          port: 53
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: mfe-shell-allow-ingress
+  namespace: mfe-shell
+  labels:
+    app.kubernetes.io/name: mfe-shell
+    app.kubernetes.io/part-of: wecoya-platform
+    app.kubernetes.io/managed-by: argocd
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: mfe-shell
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+          podSelector:
+            matchLabels:
+              app.kubernetes.io/name: cilium-ingress
+      ports:
+        - protocol: TCP
+          port: 8080

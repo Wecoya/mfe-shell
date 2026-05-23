@@ -1,0 +1,31 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: mfe-shell-ingress
+  namespace: mfe-shell
+  labels:
+    app.kubernetes.io/name: mfe-shell
+    app.kubernetes.io/instance: mfe-shell
+    app.kubernetes.io/component: frontend
+    app.kubernetes.io/part-of: wecoya-platform
+    app.kubernetes.io/managed-by: argocd
+  annotations:
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+spec:
+  ingressClassName: cilium
+  tls:
+    - hosts:
+        - app.wecoya.de
+      secretName: mfe-shell-tls
+  rules:
+    - host: app.wecoya.de
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: mfe-shell
+                port:
+                  name: http

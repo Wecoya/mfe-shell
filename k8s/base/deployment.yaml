@@ -1,0 +1,103 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mfe-shell
+  namespace: mfe-shell
+  labels:
+    app.kubernetes.io/name: mfe-shell
+    app.kubernetes.io/instance: mfe-shell
+    app.kubernetes.io/version: "0.1.0"
+    app.kubernetes.io/component: frontend
+    app.kubernetes.io/part-of: wecoya-platform
+    app.kubernetes.io/managed-by: argocd
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: mfe-shell
+      app.kubernetes.io/instance: mfe-shell
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: mfe-shell
+        app.kubernetes.io/instance: mfe-shell
+        app.kubernetes.io/version: "0.1.0"
+        app.kubernetes.io/component: frontend
+        app.kubernetes.io/part-of: wecoya-platform
+    spec:
+      automountServiceAccountToken: false
+      containers:
+        - name: nginx
+          image: ghcr.io/wecoya/mfe-shell:0.1.0
+          ports:
+            - name: http
+              containerPort: 8080
+              protocol: TCP
+          env:
+            - name: KEYCLOAK_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: mfe-shell-config
+                  key: KEYCLOAK_URL
+            - name: KEYCLOAK_REALM
+              valueFrom:
+                configMapKeyRef:
+                  name: mfe-shell-config
+                  key: KEYCLOAK_REALM
+            - name: KEYCLOAK_CLIENT_ID
+              valueFrom:
+                configMapKeyRef:
+                  name: mfe-shell-config
+                  key: KEYCLOAK_CLIENT_ID
+            - name: MFE_REMOTES
+              valueFrom:
+                configMapKeyRef:
+                  name: mfe-shell-config
+                  key: MFE_REMOTES
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 101
+            readOnlyRootFilesystem: true
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+            limits:
+              cpu: 200m
+              memory: 128Mi
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+            - name: nginx-cache
+              mountPath: /var/cache/nginx
+            - name: nginx-run
+              mountPath: /var/run
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            initialDelaySeconds: 3
+            periodSeconds: 5
+      volumes:
+        - name: tmp
+          emptyDir:
+            medium: Memory
+            sizeLimit: 10Mi
+        - name: nginx-cache
+          emptyDir:
+            medium: Memory
+            sizeLimit: 50Mi
+        - name: nginx-run
+          emptyDir:
+            medium: Memory
+            sizeLimit: 5Mi

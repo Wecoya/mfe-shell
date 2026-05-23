@@ -1,0 +1,25 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - ../../base
+
+patches:
+  - target:
+      kind: Deployment
+      name: mfe-shell
+    patch: |
+      - op: replace
+        path: /spec/replicas
+        value: 1
+
+  - target:
+      kind: ConfigMap
+      name: mfe-shell-config
+    patch: |
+      - op: replace
+        path: /data/KEYCLOAK_URL
+        value: "https://auth.dev.wecoya.de"
+      - op: replace
+        path: /data/MFE_REMOTES
+        value: '{"claims":"https://claims.dev.wecoya.de/remoteEntry.js"}'
