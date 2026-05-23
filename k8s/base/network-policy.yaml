@@ -44,9 +44,6 @@ spec:
         - namespaceSelector:
             matchLabels:
               kubernetes.io/metadata.name: kube-system
-          podSelector:
-            matchLabels:
-              app.kubernetes.io/name: cilium-ingress
       ports:
         - protocol: TCP
           port: 8080
