@@ -32,7 +32,7 @@ onUnmounted(() => {
   injectedScripts.length = 0
 })
 
-async function loadRemoteModule(name: string, url: string): Promise<{ default: Component }> {
+async function loadRemoteModule(_name: string, url: string): Promise<{ default: Component }> {
   const container = await loadRemoteEntry(url)
   const factory = await container.get('./App')
   return factory()

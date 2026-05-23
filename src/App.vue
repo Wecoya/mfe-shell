@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
-import { createPinia } from 'pinia'
 import AppShell from '@/layout/AppShell.vue'
 import { useUserStore } from '@/store/user'
 import { fetchRuntimeConfig, parseRemoteEntries, type RemoteEntry } from '@/federation/remote-config'
@@ -8,6 +7,10 @@ import { fetchRuntimeConfig, parseRemoteEntries, type RemoteEntry } from '@/fede
 const remotes = ref<RemoteEntry[]>([])
 const isReady = ref(false)
 const configError = ref('')
+
+function reload() {
+  window.location.reload()
+}
 
 onMounted(async () => {
   try {
@@ -26,7 +29,7 @@ onMounted(async () => {
   <div v-if="configError" class="config-error">
     <h2>Configuration unavailable</h2>
     <p>{{ configError }}</p>
-    <button @click="() => window.location.reload()">Retry</button>
+    <button @click="reload">Retry</button>
   </div>
   <AppShell v-else-if="isReady" :remotes="remotes">
     <router-view />
