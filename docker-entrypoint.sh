@@ -5,7 +5,7 @@ set -e
 # MFE_REMOTES is a JSON object of remote names to URLs
 # e.g. MFE_REMOTES='{"claims":"https://claims.wecoya.de/remoteEntry.js"}'
 
-CONFIG_FILE="/usr/share/nginx/html/config.json"
+CONFIG_FILE="/tmp/config.json"
 
 if [ -n "$MFE_REMOTES" ]; then
   cat > "$CONFIG_FILE" <<EOF
