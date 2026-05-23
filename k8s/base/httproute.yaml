@@ -1,0 +1,39 @@
+---
+# HTTPRoute: mfe-shell → app-public Gateway
+#
+# Routes shell.app.wecoya.online to the mfe-shell Service.
+# TLS is terminated at the shared Gateway (wildcard cert *.app.wecoya.online).
+#
+# Self-service pattern: each app creates its own HTTPRoute in its namespace,
+# referencing the shared app-public Gateway in cilium-gateways.
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: mfe-shell
+  namespace: mfe-shell
+  labels:
+    app.kubernetes.io/name: mfe-shell
+    app.kubernetes.io/instance: mfe-shell
+    app.kubernetes.io/component: routing
+    app.kubernetes.io/part-of: wecoya-platform
+    app.kubernetes.io/managed-by: argocd
+spec:
+  parentRefs:
+    - group: gateway.networking.k8s.io
+      kind: Gateway
+      name: app-public
+      namespace: cilium-gateways
+      sectionName: https
+  hostnames:
+    - shell.app.wecoya.online
+  rules:
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /
+      backendRefs:
+        - group: ""
+          kind: Service
+          name: mfe-shell
+          port: 8080
+          weight: 1
