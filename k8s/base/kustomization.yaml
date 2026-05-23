@@ -9,7 +9,7 @@ resources:
   - deployment.yaml
   - service.yaml
   - configmap.yaml
-  - httproute.yaml
+  - ingress.yaml
   - network-policy.yaml
 
 commonLabels:
