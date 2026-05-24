@@ -15,3 +15,9 @@ patches:
       - op: replace
         path: /data/MFE_REMOTES
         value: '{"claims":"https://claims.staging.wecoya.de/remoteEntry.js"}'
+  - target:
+      group: monitoring.coreos.com
+      version: v1
+      kind: PrometheusRule
+      name: mfe-shell-alerts
+    path: patches/prometheus-rule.yaml

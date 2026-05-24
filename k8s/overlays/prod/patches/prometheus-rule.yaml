@@ -1,0 +1,41 @@
+---
+# Prod patch — upgrade both alerts to critical + PagerDuty routing.
+#
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: mfe-shell-alerts
+spec:
+  groups:
+    - name: mfe-shell.errors
+      rules:
+        - alert: ServiceHighErrorRate
+          expr: |
+            rate(http_requests_total{service="mfe-shell", status=~"5..", cluster="psc-app-01"}[5m])
+            /
+            rate(http_requests_total{service="mfe-shell", cluster="psc-app-01"}[5m])
+            > 0.05
+          for: 2m
+          labels:
+            severity: critical
+            alertmanager_route: pagerduty
+            service: mfe-shell
+          annotations:
+            summary: "mfe-shell HTTP error rate > 5%"
+            description: "Service mfe-shell in {{ $labels.namespace }} has a 5xx error rate of {{ $value | humanizePercentage }} over the last 5 minutes."
+            runbook: "https://wiki.wecoya.online/runbooks/service-high-error-rate"
+
+    - name: mfe-shell.availability
+      rules:
+        - alert: ServiceDown
+          expr: |
+            up{job="mfe-shell", cluster="psc-app-01"} == 0
+          for: 1m
+          labels:
+            severity: critical
+            alertmanager_route: pagerduty
+            service: mfe-shell
+          annotations:
+            summary: "mfe-shell is down"
+            description: "Prometheus cannot scrape mfe-shell in {{ $labels.namespace }}. The service may be crashed or unscheduled."
+            runbook: "https://wiki.wecoya.online/runbooks/service-down"
