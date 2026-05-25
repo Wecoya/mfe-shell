@@ -17,3 +17,20 @@ patches:
       - op: replace
         path: /data/MFE_REMOTES
         value: '{"claims":"https://claims.staging.wecoya.de/remoteEntry.js"}'
+
+  # Override Ingress host to staging-specific subdomain.
+  # No wildcard *.app.wecoya.online exists — DNS record shell-staging.app.wecoya.online
+  # is managed explicitly via Crossplane HetznerDNSRecord in infra repo.
+  - target:
+      kind: Ingress
+      name: mfe-shell
+    patch: |
+      - op: replace
+        path: /spec/tls/0/hosts/0
+        value: shell-staging.app.wecoya.online
+      - op: replace
+        path: /spec/tls/0/secretName
+        value: mfe-shell-staging-tls
+      - op: replace
+        path: /spec/rules/0/host
+        value: shell-staging.app.wecoya.online
