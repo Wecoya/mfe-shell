@@ -10,6 +10,11 @@ metadata:
     app.kubernetes.io/component: frontend
     app.kubernetes.io/part-of: wecoya-platform
     app.kubernetes.io/managed-by: argocd
+  annotations:
+    # Stakater Reloader: restart Deployment when mfe-registry ConfigMap changes.
+    # mfe-registry holds the JSON registry of deployed MFEs and is patched by
+    # the Backstage scaffolder on every new MFE registration.
+    configmap.reloader.stakater.com/reload: "mfe-registry"
 spec:
   replicas: 2
   progressDeadlineSeconds: 300
