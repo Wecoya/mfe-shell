@@ -1,0 +1,20 @@
+name: PR Quality Gate
+
+on:
+  pull_request:
+    branches: [main]
+
+jobs:
+  quality:
+    uses: Wecoya/platform-actions/.github/workflows/reusable-quality.yml@main
+    with:
+      coverage-threshold: 70
+      node-version: "22"
+    secrets: inherit
+
+  security:
+    uses: Wecoya/platform-actions/.github/workflows/reusable-security-scan.yml@main
+    with:
+      scan-dockerfile: true
+      iac-dirs: "k8s/"
+    secrets: inherit

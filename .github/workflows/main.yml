@@ -1,0 +1,59 @@
+name: Main Build & Deploy
+
+on:
+  push:
+    branches: [main]
+    tags: ["v*"]
+
+permissions:
+  contents: read
+
+jobs:
+  validate-manifests:
+    name: Validate K8s Manifests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install tools
+        run: |
+          curl -s "https://raw.githubusercontent.com/kubernetes-sigs/kustomize/master/hack/install_kustomize.sh" | bash
+          curl -L https://github.com/yannh/kubeconform/releases/latest/download/kubeconform-linux-amd64.tar.gz | tar xz
+          sudo mv kustomize kubeconform /usr/local/bin/
+      - name: Validate manifests
+        run: |
+          kustomize build k8s/overlays/prod | kubeconform \
+            -strict \
+            -kubernetes-version 1.29.0 \
+            -schema-location default \
+            -schema-location 'https://raw.githubusercontent.com/datreeio/CRDs-catalog/main/{{.Group}}/{{.ResourceKind}}_{{.ResourceAPIVersion}}.json'
+
+  quality:
+    uses: Wecoya/platform-actions/.github/workflows/reusable-quality.yml@main
+    with:
+      coverage-threshold: 70
+      node-version: "22"
+    secrets: inherit
+
+  security:
+    uses: Wecoya/platform-actions/.github/workflows/reusable-security-scan.yml@main
+    with:
+      scan-dockerfile: true
+      iac-dirs: "k8s/"
+    secrets: inherit
+
+  build-deploy:
+    needs: [validate-manifests, quality, security]
+    uses: Wecoya/platform-actions/.github/workflows/reusable-build.yml@main
+    with:
+      template-type: mfe
+      environment: dev
+    secrets: inherit
+
+  metrics:
+    needs: [build-deploy]
+    if: always()
+    uses: Wecoya/platform-actions/.github/workflows/reusable-notify.yml@main
+    with:
+      type: deploy
+      status: ${{ needs.build-deploy.result }}
+    secrets: inherit
