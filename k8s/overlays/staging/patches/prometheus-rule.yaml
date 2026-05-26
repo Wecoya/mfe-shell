@@ -1,0 +1,22 @@
+---
+# Staging patch — upgrade ServiceDown to critical severity (no PagerDuty).
+#
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: mfe-shell-alerts
+spec:
+  groups:
+    - name: mfe-shell.availability
+      rules:
+        - alert: ServiceDown
+          expr: |
+            up{job="mfe-shell", cluster="psc-app-01"} == 0
+          for: 1m
+          labels:
+            severity: critical
+            service: mfe-shell
+          annotations:
+            summary: "mfe-shell is down"
+            description: "Prometheus cannot scrape mfe-shell in {{ $labels.namespace }}. The service may be crashed or unscheduled."
+            runbook: "https://wiki.wecoya.online/runbooks/service-down"

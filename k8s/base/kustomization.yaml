@@ -11,6 +11,23 @@ resources:
   - configmap.yaml
   - ingress.yaml
   - network-policy.yaml
+  - service-monitor.yaml
+  - prometheus-rule.yaml
+
+# Grafana dashboard — auto-imported by Grafana sidecar (searchNamespace: ALL).
+configMapGenerator:
+  - name: grafana-dashboard-mfe-shell
+    files:
+      - mfe-shell-dashboard.json=monitoring/grafana-dashboard.json
+    options:
+      labels:
+        grafana_dashboard: "1"
+        app.kubernetes.io/name: mfe-shell
+        app.kubernetes.io/component: observability
+        app.kubernetes.io/part-of: wecoya-platform
+        app.kubernetes.io/managed-by: argocd
+      annotations:
+        grafana_folder: "Services"
 
 commonLabels:
   app.kubernetes.io/part-of: wecoya-platform

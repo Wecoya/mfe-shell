@@ -1,0 +1,25 @@
+---
+# ServiceMonitor — tells Prometheus Operator which pods to scrape.
+# Label `release: prometheus` must match the Prometheus Operator's serviceMonitorSelector.
+#
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: mfe-shell
+  namespace: mfe-shell
+  labels:
+    app.kubernetes.io/name: mfe-shell
+    app.kubernetes.io/component: observability
+    app.kubernetes.io/part-of: wecoya-platform
+    app.kubernetes.io/managed-by: argocd
+    release: prometheus
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: mfe-shell
+      app.kubernetes.io/instance: mfe-shell
+  endpoints:
+    - port: http
+      path: /metrics
+      interval: 30s
+      scrapeTimeout: 10s

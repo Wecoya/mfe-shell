@@ -1,0 +1,54 @@
+---
+# PrometheusRule — alerting rules evaluated by Management Cluster Prometheus.
+# NOTE: The app cluster runs Prometheus in agent mode (no TSDB). These rules must be
+# deployed to the Management Cluster to fire.
+# See: https://github.com/Wecoya/private-sovereign-cloud/blob/main/docs/how-to/monitoring-per-service.md
+#
+# Alert severity by environment (controlled via Kustomize patches):
+#   dev:     warning  (default)
+#   staging: ServiceDown → critical (no PagerDuty)
+#   prod:    both → critical + alertmanager_route: pagerduty
+#
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: mfe-shell-alerts
+  namespace: mfe-shell
+  labels:
+    app.kubernetes.io/name: mfe-shell
+    app.kubernetes.io/component: observability
+    app.kubernetes.io/part-of: wecoya-platform
+    app.kubernetes.io/managed-by: argocd
+    release: prometheus
+spec:
+  groups:
+    - name: mfe-shell.errors
+      rules:
+        - alert: ServiceHighErrorRate
+          expr: |
+            rate(http_requests_total{service="mfe-shell", status=~"5..", cluster="psc-app-01"}[5m])
+            /
+            rate(http_requests_total{service="mfe-shell", cluster="psc-app-01"}[5m])
+            > 0.05
+          for: 2m
+          labels:
+            severity: warning
+            service: mfe-shell
+          annotations:
+            summary: "mfe-shell HTTP error rate > 5%"
+            description: "Service mfe-shell in {{ $labels.namespace }} has a 5xx error rate of {{ $value | humanizePercentage }} over the last 5 minutes."
+            runbook: "https://wiki.wecoya.online/runbooks/service-high-error-rate"
+
+    - name: mfe-shell.availability
+      rules:
+        - alert: ServiceDown
+          expr: |
+            up{job="mfe-shell", cluster="psc-app-01"} == 0
+          for: 1m
+          labels:
+            severity: warning
+            service: mfe-shell
+          annotations:
+            summary: "mfe-shell is down"
+            description: "Prometheus cannot scrape mfe-shell in {{ $labels.namespace }}. The service may be crashed or unscheduled."
+            runbook: "https://wiki.wecoya.online/runbooks/service-down"

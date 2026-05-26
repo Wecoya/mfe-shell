@@ -14,3 +14,9 @@ patches:
       - op: replace
         path: /spec/replicas
         value: 3
+  - target:
+      group: monitoring.coreos.com
+      version: v1
+      kind: PrometheusRule
+      name: mfe-shell-alerts
+    path: patches/prometheus-rule.yaml
