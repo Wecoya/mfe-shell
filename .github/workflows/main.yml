@@ -5,6 +5,9 @@ on:
     branches: [main]
     tags: ["v*"]
 
+permissions:
+  contents: read
+
 jobs:
   validate-manifests:
     name: Validate K8s Manifests
