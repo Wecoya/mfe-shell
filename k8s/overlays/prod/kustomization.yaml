@@ -1,22 +1,36 @@
+---
+# Kustomize overlay: prod
+#
+# Deploys MFE_NAME to namespace MFE_NAME-prod on psc-app-cluster.
+# Domain: MFE_NAME.app.wecoya.online (no env suffix — production is canonical)
+# Image tag: updated via promote.yml with GitHub Environment approval gate.
+# Replicas: 2 (no cold starts in production).
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 
-namespace: mfe-shell-prod
+namespace: MFE_NAME-prod
 
 resources:
   - ../../base
+  - certificate.yaml
+  - patches/ingress.yaml
+
+images:
+  - name: ghcr.io/wecoya/MFE_NAME
+    newTag: main   # promote.yml rewrites this to the released SHA
 
 patches:
-  - target:
+  - path: patches/replicas.yaml
+    target:
       kind: Deployment
-      name: mfe-shell
-    patch: |
-      - op: replace
-        path: /spec/replicas
-        value: 3
-  - target:
-      group: monitoring.coreos.com
-      version: v1
-      kind: PrometheusRule
-      name: mfe-shell-alerts
-    path: patches/prometheus-rule.yaml
+      name: MFE_NAME
+  - path: patches/configmap.yaml
+    target:
+      kind: ConfigMap
+      name: MFE_NAME-config
+
+labels:
+  - pairs:
+      psc.wecoya.io/service: MFE_NAME
+      psc.wecoya.io/environment: prod
+    includeSelectors: false

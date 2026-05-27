@@ -1,0 +1,29 @@
+---
+# Certificate: MFE_NAME-dev-tls
+#
+# TLS certificate for MFE_NAME-dev.app.wecoya.online via Let's Encrypt DNS-01.
+# Uses the App Cluster ClusterIssuer (letsencrypt-prod-dns01-app).
+# Issuance: up to 5 min on first issue (DNS-01 propagation).
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: MFE_NAME-dev-tls
+  namespace: MFE_NAME-dev
+  labels:
+    app.kubernetes.io/name: MFE_NAME-dev-tls
+    app.kubernetes.io/component: certificate
+    app.kubernetes.io/part-of: wecoya-platform
+    app.kubernetes.io/managed-by: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "20"
+spec:
+  secretName: MFE_NAME-dev-tls
+  dnsNames:
+    - MFE_NAME-dev.app.wecoya.online
+  issuerRef:
+    name: letsencrypt-prod-dns01-app
+    kind: ClusterIssuer
+    group: cert-manager.io
+  usages:
+    - digital signature
+    - key encipherment

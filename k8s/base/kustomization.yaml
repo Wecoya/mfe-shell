@@ -1,33 +1,18 @@
+---
+# Kustomize base: MFE_NAME
+#
+# Environment-agnostic resources for the MFE nginx deployment.
+# Each overlay (dev/staging/prod) adds:
+#   - namespace
+#   - Ingress (env-specific hostname + ExternalDNS annotation)
+#   - Certificate (env-specific TLS cert via cert-manager)
+#   - ConfigMap patch (env-specific API endpoints + MFE remote entry URLs)
+#   - Image tag (newTag via images override)
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 
-namespace: mfe-shell
-
 resources:
-  - namespace.yaml
-  - ghcr-pull-secret.yaml
   - deployment.yaml
   - service.yaml
   - configmap.yaml
-  - ingress.yaml
   - network-policy.yaml
-  - service-monitor.yaml
-  - prometheus-rule.yaml
-
-# Grafana dashboard — auto-imported by Grafana sidecar (searchNamespace: ALL).
-configMapGenerator:
-  - name: grafana-dashboard-mfe-shell
-    files:
-      - mfe-shell-dashboard.json=monitoring/grafana-dashboard.json
-    options:
-      labels:
-        grafana_dashboard: "1"
-        app.kubernetes.io/name: mfe-shell
-        app.kubernetes.io/component: observability
-        app.kubernetes.io/part-of: wecoya-platform
-        app.kubernetes.io/managed-by: argocd
-      annotations:
-        grafana_folder: "Services"
-
-commonLabels:
-  app.kubernetes.io/part-of: wecoya-platform

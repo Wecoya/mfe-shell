@@ -1,0 +1,13 @@
+---
+# ConfigMap patch: dev environment
+#
+# Overrides the base ConfigMap with dev-specific values.
+# Add MFE remote entry URLs here if this MFE depends on other MFEs.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: MFE_NAME-config
+data:
+  KEYCLOAK_URL: "https://id.plattform.wecoya.online"
+  KEYCLOAK_REALM: "wecoya-dev"
+  API_BASE_URL: "https://api-dev.wecoya.online"

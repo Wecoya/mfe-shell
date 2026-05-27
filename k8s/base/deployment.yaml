@@ -1,77 +1,95 @@
+---
+# Deployment: MFE_NAME
+#
+# Serves the Vue 3 Module Federation microfrontend as a static nginx app.
+# Runtime config (/config.json) is generated at container startup from the
+# MFE_NAME-config ConfigMap (env-specific API URLs + remote entry endpoints).
+#
+# Security: multi-stage image (node build → nginx:alpine), non-root, read-only root fs.
+# Writable dirs for nginx: /tmp, /var/cache/nginx, /var/run (emptyDir volumes).
+#
+# Overlays patch:
+#   - namespace (MFE_NAME-{dev,staging,prod})
+#   - image tag (newTag in kustomization.yaml)
+#   - replicas (prod: 2)
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: mfe-shell
-  namespace: mfe-shell
+  name: MFE_NAME
   labels:
-    app.kubernetes.io/name: mfe-shell
-    app.kubernetes.io/instance: mfe-shell
-    app.kubernetes.io/version: "0.1.2"
+    app.kubernetes.io/name: MFE_NAME
     app.kubernetes.io/component: frontend
     app.kubernetes.io/part-of: wecoya-platform
     app.kubernetes.io/managed-by: argocd
   annotations:
-    # Stakater Reloader: restart Deployment when mfe-registry ConfigMap changes.
-    # mfe-registry holds the JSON registry of deployed MFEs and is patched by
-    # the Backstage scaffolder on every new MFE registration.
-    configmap.reloader.stakater.com/reload: "mfe-registry"
+    argocd.argoproj.io/sync-wave: "10"
+    # Replace=true allows ArgoCD to delete+recreate this Deployment when spec.selector
+    # changes (immutable field). Without this, SSA mode has no --force escape hatch.
+    argocd.argoproj.io/sync-options: Replace=true
 spec:
-  replicas: 2
-  progressDeadlineSeconds: 300
+  replicas: 1
   selector:
     matchLabels:
-      app.kubernetes.io/name: mfe-shell
-      app.kubernetes.io/instance: mfe-shell
+      app.kubernetes.io/name: MFE_NAME
   template:
     metadata:
       labels:
-        app.kubernetes.io/name: mfe-shell
-        app.kubernetes.io/instance: mfe-shell
-        app.kubernetes.io/version: "0.1.2"
+        app.kubernetes.io/name: MFE_NAME
         app.kubernetes.io/component: frontend
         app.kubernetes.io/part-of: wecoya-platform
-      annotations: {}
     spec:
       automountServiceAccountToken: false
-      imagePullSecrets:
-        - name: ghcr-pull-secret
-      containers:
-        - name: nginx
-          image: ghcr.io/wecoya/mfe-shell:0.1.4
-          imagePullPolicy: Always
-          ports:
-            - name: http
-              containerPort: 8080
-              protocol: TCP
-          env:
-            - name: KEYCLOAK_URL
-              valueFrom:
-                configMapKeyRef:
-                  name: mfe-shell-config
-                  key: KEYCLOAK_URL
-            - name: KEYCLOAK_REALM
-              valueFrom:
-                configMapKeyRef:
-                  name: mfe-shell-config
-                  key: KEYCLOAK_REALM
-            - name: KEYCLOAK_CLIENT_ID
-              valueFrom:
-                configMapKeyRef:
-                  name: mfe-shell-config
-                  key: KEYCLOAK_CLIENT_ID
-            - name: MFE_REMOTES
-              valueFrom:
-                configMapKeyRef:
-                  name: mfe-shell-config
-                  key: MFE_REMOTES
+      initContainers:
+        - name: config-gen
+          image: ghcr.io/wecoya/MFE_NAME:main
+          command:
+            - sh
+            - -c
+            - |
+              set -e
+              echo "Generating /config/config.json from environment..."
+              cat > /config/config.json <<EOF
+              {
+                "keycloak_url": "${KEYCLOAK_URL}",
+                "keycloak_realm": "${KEYCLOAK_REALM}",
+                "api_base_url": "${API_BASE_URL}"
+              }
+              EOF
+              echo "Done."
+          envFrom:
+            - configMapRef:
+                name: MFE_NAME-config
+          volumeMounts:
+            - name: config-volume
+              mountPath: /config
           securityContext:
             runAsNonRoot: true
-            runAsUser: 101
-            readOnlyRootFilesystem: true
+            runAsUser: 1000
             allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
             capabilities:
-              drop:
-                - ALL
+              drop: [ALL]
+          resources:
+            requests:
+              cpu: 50m
+              memory: 32Mi
+            limits:
+              cpu: 100m
+              memory: 64Mi
+      containers:
+        - name: nginx
+          image: ghcr.io/wecoya/MFE_NAME:main
+          ports:
+            - containerPort: 8080
+              name: http
+              protocol: TCP
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 101   # nginx user in nginx:alpine
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: [ALL]
           resources:
             requests:
               cpu: 50m
@@ -80,34 +98,34 @@ spec:
               cpu: 200m
               memory: 128Mi
           volumeMounts:
-            - name: tmp
-              mountPath: /tmp
+            - name: config-volume
+              mountPath: /usr/share/nginx/html/config.json
+              subPath: config.json
+              readOnly: true
             - name: nginx-cache
               mountPath: /var/cache/nginx
             - name: nginx-run
               mountPath: /var/run
+            - name: tmp
+              mountPath: /tmp
           livenessProbe:
             httpGet:
-              path: /healthz
-              port: http
+              path: /health
+              port: 8080
             initialDelaySeconds: 5
-            periodSeconds: 10
+            periodSeconds: 15
           readinessProbe:
             httpGet:
-              path: /healthz
-              port: http
+              path: /health
+              port: 8080
             initialDelaySeconds: 3
-            periodSeconds: 5
+            periodSeconds: 10
       volumes:
-        - name: tmp
-          emptyDir:
-            medium: Memory
-            sizeLimit: 10Mi
+        - name: config-volume
+          emptyDir: {}
         - name: nginx-cache
-          emptyDir:
-            medium: Memory
-            sizeLimit: 50Mi
+          emptyDir: {}
         - name: nginx-run
-          emptyDir:
-            medium: Memory
-            sizeLimit: 5Mi
+          emptyDir: {}
+        - name: tmp
+          emptyDir: {}

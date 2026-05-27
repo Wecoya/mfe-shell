@@ -1,25 +1,31 @@
+---
+# Kustomize overlay: staging
+#
+# Deploys MFE_NAME to namespace MFE_NAME-staging on psc-app-cluster.
+# Domain: MFE_NAME-staging.app.wecoya.online
+# Image tag: updated via promote.yml (manual trigger, no auto-sync).
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 
-namespace: mfe-shell-staging
+namespace: MFE_NAME-staging
 
 resources:
   - ../../base
+  - certificate.yaml
+  - patches/ingress.yaml
+
+images:
+  - name: ghcr.io/wecoya/MFE_NAME
+    newTag: main   # promote.yml rewrites this to the promoted SHA
 
 patches:
-  - target:
+  - path: patches/configmap.yaml
+    target:
       kind: ConfigMap
-      name: mfe-shell-config
-    patch: |
-      - op: replace
-        path: /data/KEYCLOAK_URL
-        value: "https://auth.staging.wecoya.de"
-      - op: replace
-        path: /data/MFE_REMOTES
-        value: '{"claims":"https://claims.staging.wecoya.de/remoteEntry.js"}'
-  - target:
-      group: monitoring.coreos.com
-      version: v1
-      kind: PrometheusRule
-      name: mfe-shell-alerts
-    path: patches/prometheus-rule.yaml
+      name: MFE_NAME-config
+
+labels:
+  - pairs:
+      psc.wecoya.io/service: MFE_NAME
+      psc.wecoya.io/environment: staging
+    includeSelectors: false
