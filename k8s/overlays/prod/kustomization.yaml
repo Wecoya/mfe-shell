@@ -20,3 +20,12 @@ patches:
       kind: PrometheusRule
       name: mfe-shell-alerts
     path: patches/prometheus-rule.yaml
+
+  # Use the cluster-wide wildcard certificate already provisioned for app.wecoya.online.
+  - target:
+      kind: Ingress
+      name: mfe-shell
+    patch: |
+      - op: replace
+        path: /spec/tls/0/secretName
+        value: wildcard-app-wecoya-online-tls

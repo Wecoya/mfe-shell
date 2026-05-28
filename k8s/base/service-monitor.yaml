@@ -22,4 +22,4 @@ spec:
     - port: http
       path: /metrics
       interval: 30s
-      scrapeTimeout: 10s
+      scheme: http
