@@ -27,8 +27,8 @@ patches:
         value: '{"claims":"https://claims.dev.wecoya.de/remoteEntry.js"}'
 
   # Override Ingress host to dev-specific subdomain.
-  # No wildcard *.app.wecoya.online exists — DNS record shell-dev.app.wecoya.online
-  # is managed explicitly via Crossplane HetznerDNSRecord in infra repo.
+  # DNS is managed explicitly via Crossplane HetznerDNSRecord in infra repo.
+  # TLS uses the shared wildcard certificate for app.wecoya.online.
   - target:
       kind: Ingress
       name: mfe-shell
@@ -38,7 +38,7 @@ patches:
         value: shell-dev.app.wecoya.online
       - op: replace
         path: /spec/tls/0/secretName
-        value: mfe-shell-dev-tls
+        value: wildcard-app-wecoya-online-tls
       - op: replace
         path: /spec/rules/0/host
         value: shell-dev.app.wecoya.online
