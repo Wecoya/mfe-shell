@@ -26,6 +26,22 @@ patches:
     target:
       kind: ConfigMap
       name: MFE_NAME-config
+  # Override Ingress host to dev-specific subdomain.
+  # DNS is managed explicitly via Crossplane HetznerDNSRecord in infra repo.
+  # TLS uses the shared wildcard certificate for app.wecoya.online.
+  - target:
+      kind: Ingress
+      name: mfe-shell
+    patch: |
+      - op: replace
+        path: /spec/tls/0/hosts/0
+        value: shell-dev.app.wecoya.online
+      - op: replace
+        path: /spec/tls/0/secretName
+        value: wildcard-app-wecoya-online-tls
+      - op: replace
+        path: /spec/rules/0/host
+        value: shell-dev.app.wecoya.online
 
 labels:
   - pairs:
