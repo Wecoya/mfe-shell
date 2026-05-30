@@ -1,16 +1,29 @@
+---
+# ConfigMap: MFE_NAME-config
+#
+# Environment-specific configuration for MFE_NAME.
+# Values here are TEMPLATE PLACEHOLDERS — each overlay patches them with
+# the correct URLs for dev, staging, or prod.
+#
+# Fields:
+#   KEYCLOAK_URL    — Keycloak base URL for OIDC auth
+#   KEYCLOAK_REALM  — Keycloak realm name (env-specific)
+#   API_BASE_URL    — Backend API base URL (env-specific)
+#
+# Add additional fields as needed (e.g. remote entry URLs for dependent MFEs).
+# The init-container in deployment.yaml reads these and writes /config.json.
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: mfe-shell-config
-  namespace: mfe-shell
+  name: MFE_NAME-config
   labels:
-    app.kubernetes.io/name: mfe-shell
-    app.kubernetes.io/instance: mfe-shell
-    app.kubernetes.io/component: frontend
+    app.kubernetes.io/name: MFE_NAME
+    app.kubernetes.io/component: config
     app.kubernetes.io/part-of: wecoya-platform
     app.kubernetes.io/managed-by: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "5"
 data:
-  KEYCLOAK_URL: "https://id.plattform.wecoya.online/auth"
-  KEYCLOAK_REALM: "psc-platform"
-  KEYCLOAK_CLIENT_ID: "mfe-shell"
-  MFE_REMOTES: '{}'
+  KEYCLOAK_URL: "https://id.plattform.wecoya.online"
+  KEYCLOAK_REALM: "wecoya"
+  API_BASE_URL: "https://api.wecoya.online"

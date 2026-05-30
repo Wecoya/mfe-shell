@@ -1,0 +1,60 @@
+# GitHub Actions: Promote Image to Staging or Prod
+#
+# Manual trigger (workflow_dispatch) only.
+# Promotes a known image SHA from dev → staging or dev → prod.
+#
+# Inputs:
+#   target_env  — staging | prod
+#   image_sha   — the container image SHA to promote (short SHA from ghcr.io)
+#
+# Prod requires approval via the GitHub Environment "production" gate.
+# The workflow writes to kustomization.yaml ONLY after the gate is approved.
+#
+# Audit trail: every promotion is recorded as a Git commit:
+#   chore(deploy): promote <sha> to <env>
+name: Promote to Staging or Prod
+
+on:
+  workflow_dispatch:
+    inputs:
+      target_env:
+        description: Target environment
+        required: true
+        type: choice
+        options:
+          - staging
+          - prod
+      image_sha:
+        description: Image SHA to promote (e.g. abc1234)
+        required: true
+        type: string
+
+jobs:
+  promote:
+    name: Promote ${{ inputs.image_sha }} to ${{ inputs.target_env }}
+    runs-on: ubuntu-latest
+    environment: ${{ inputs.target_env == 'prod' && 'production' || inputs.target_env }}
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Install kustomize
+        uses: imranismail/setup-kustomize@v2
+
+      - name: Update image tag in overlay
+        run: |
+          cd k8s/overlays/${{ inputs.target_env }}
+          kustomize edit set image ghcr.io/wecoya/MFE_NAME=ghcr.io/wecoya/MFE_NAME:${{ inputs.image_sha }}
+
+      - name: Commit and push
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add k8s/overlays/${{ inputs.target_env }}/kustomization.yaml
+          git commit -m "chore(deploy): promote ${{ inputs.image_sha }} to ${{ inputs.target_env }}" \
+            || echo "No changes to commit"
+          git push

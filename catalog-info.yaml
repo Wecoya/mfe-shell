@@ -1,0 +1,27 @@
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: MFE_NAME
+  description: "A @wecoya Vue 3 Microfrontend"
+  annotations:
+    github.com/project-slug: "Wecoya/MFE_NAME"
+    backstage.io/techdocs-ref: "dir:."
+    psc.wecoya.io/source-repo: "https://github.com/Wecoya/MFE_NAME"
+    psc.wecoya.io/workspace-path: "apps/MFE_NAME"
+    psc.wecoya.io/component-type: "microfrontend"
+    psc.wecoya.io/template: "vue-mfe"
+    psc.wecoya.io/skills-managed: "true"
+    backstage.io/badge-url: "https://grafana.wecoya.internal/d/platform-ci-health?var-repo=Wecoya/MFE_NAME"
+  tags:
+    - typescript
+    - vue
+    - microfrontend
+  links:
+    - url: "https://github.com/Wecoya/MFE_NAME"
+      title: "GitHub Repository"
+      icon: github
+spec:
+  type: website
+  lifecycle: production
+  owner: "group:wecoya/platform-team"
+  system: platform-infrastructure

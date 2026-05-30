@@ -1,0 +1,8 @@
+---
+# Patch: replicas for prod (2 replicas, no cold starts)
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: MFE_NAME
+spec:
+  replicas: 2

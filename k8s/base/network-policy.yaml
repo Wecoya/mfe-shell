@@ -1,53 +1,46 @@
+---
+# NetworkPolicy: MFE_NAME-ingress-allow
+#
+# Default-deny all cross-namespace traffic. Allows only:
+#   Ingress: from Cilium Ingress controller (kube-system) on port 8080
+#   Egress:  DNS (kube-system:53) + same-namespace
+#
+# Relies on Cilium CNI for enforcement.
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
-  name: mfe-shell-default-deny
-  namespace: mfe-shell
+  name: MFE_NAME-ingress-allow
   labels:
-    app.kubernetes.io/name: mfe-shell
+    app.kubernetes.io/name: MFE_NAME
+    app.kubernetes.io/component: network-policy
     app.kubernetes.io/part-of: wecoya-platform
     app.kubernetes.io/managed-by: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "5"
 spec:
-  podSelector: {}
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: MFE_NAME
   policyTypes:
     - Ingress
     - Egress
-  ingress: []
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+      ports:
+        - port: 8080
+          protocol: TCP
   egress:
     - to:
         - namespaceSelector:
             matchLabels:
               kubernetes.io/metadata.name: kube-system
       ports:
-        - protocol: TCP
-          port: 53
-        - protocol: UDP
-          port: 53
----
-apiVersion: networking.k8s.io/v1
-kind: NetworkPolicy
-metadata:
-  name: mfe-shell-allow-ingress
-  namespace: mfe-shell
-  labels:
-    app.kubernetes.io/name: mfe-shell
-    app.kubernetes.io/part-of: wecoya-platform
-    app.kubernetes.io/managed-by: argocd
-spec:
-  podSelector:
-    matchLabels:
-      app.kubernetes.io/name: mfe-shell
-  policyTypes:
-    - Ingress
-  ingress:
-    - ports:
-        - protocol: TCP
-          port: 8080
-    # Prometheus Agent (monitoring namespace) — scrapes /metrics on port 8080
-    - from:
-        - namespaceSelector:
-            matchLabels:
-              kubernetes.io/metadata.name: monitoring
-      ports:
-        - protocol: TCP
-          port: 8080
+        - port: 53
+          protocol: UDP
+        - port: 53
+          protocol: TCP
+    - to:
+        - podSelector: {}

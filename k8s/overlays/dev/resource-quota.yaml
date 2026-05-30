@@ -1,0 +1,20 @@
+---
+# Default ResourceQuota for dev namespace
+#
+# Prevents dev workloads from exhausting shared app cluster resources.
+# Applied only to *-dev namespaces (staging/prod have no quota by default).
+apiVersion: v1
+kind: ResourceQuota
+metadata:
+  name: dev-default-quota
+  labels:
+    app.kubernetes.io/component: resource-quota
+    app.kubernetes.io/part-of: MFE_NAME
+    app.kubernetes.io/managed-by: argocd
+spec:
+  hard:
+    requests.cpu: "2"
+    requests.memory: "2Gi"
+    limits.cpu: "4"
+    limits.memory: "4Gi"
+    count/pods: "20"
