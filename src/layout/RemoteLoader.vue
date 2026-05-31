@@ -48,8 +48,12 @@ async function loadRemoteEntry(url: string): Promise<{ get: (module: string) => 
     script.onload = () => {
       injectedScripts.push(script)
       const name = url.split('/').pop()?.replace('.js', '') ?? ''
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const container = (window as any)[name]
+      const container = (window as unknown as Record<string, unknown>)[name] as
+        | {
+            get: (module: string) => Promise<() => { default: Component }>;
+            init: (shareScope: unknown) => void;
+          }
+        | undefined
       if (container) {
         container.init({
           vue: () => Promise.resolve(() => import('vue')),
@@ -108,7 +112,7 @@ function retry(): void {
       <button class="retry-btn" @click="retry">Try again</button>
     </div>
 
-    <component v-else-if="RemoteComponent" :is="RemoteComponent" />
+    <component :is="RemoteComponent" v-else-if="RemoteComponent" />
   </div>
 </template>
 
