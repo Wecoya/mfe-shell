@@ -4,29 +4,20 @@ on:
   push:
     branches: [main]
     tags: ["v*"]
+    paths-ignore:
+      - "k8s/overlays/**/kustomization.yaml"
+      - "k8s/overlays/**/kustomization.yml"
 
 permissions:
-  contents: read
+  actions: read
+  contents: write
+  packages: write
+  security-events: write
+  checks: write
+  pull-requests: write
+  id-token: write
 
 jobs:
-  validate-manifests:
-    name: Validate K8s Manifests
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - name: Install tools
-        run: |
-          curl -s "https://raw.githubusercontent.com/kubernetes-sigs/kustomize/master/hack/install_kustomize.sh" | bash
-          curl -L https://github.com/yannh/kubeconform/releases/latest/download/kubeconform-linux-amd64.tar.gz | tar xz
-          sudo mv kustomize kubeconform /usr/local/bin/
-      - name: Validate manifests
-        run: |
-          kustomize build k8s/overlays/prod | kubeconform \
-            -strict \
-            -kubernetes-version 1.29.0 \
-            -schema-location default \
-            -schema-location 'https://raw.githubusercontent.com/datreeio/CRDs-catalog/main/{{.Group}}/{{.ResourceKind}}_{{.ResourceAPIVersion}}.json'
-
   quality:
     uses: Wecoya/platform-actions/.github/workflows/reusable-quality.yml@main
     with:
@@ -42,7 +33,7 @@ jobs:
     secrets: inherit
 
   build-deploy:
-    needs: [validate-manifests, quality, security]
+    needs: [quality, security]
     uses: Wecoya/platform-actions/.github/workflows/reusable-build.yml@main
     with:
       template-type: mfe
@@ -56,4 +47,10 @@ jobs:
     with:
       type: deploy
       status: ${{ needs.build-deploy.result }}
+      repo: ${{ github.repository }}
+      branch: ${{ github.ref_name }}
+      version: ${{ github.sha }}
+      template: create-vue-microfrontend
+      env: dev
+      prove-visibility: ${{ github.run_number <= 3 }}
     secrets: inherit

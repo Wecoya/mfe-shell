@@ -28,29 +28,9 @@ patches:
     target:
       kind: ConfigMap
       name: MFE_NAME-config
-  - target:
-      group: monitoring.coreos.com
-      version: v1
-      kind: PrometheusRule
-      name: mfe-shell-alerts
-    path: patches/prometheus-rule.yaml
 
-  # Use the cluster-wide wildcard certificate already provisioned for app.wecoya.online.
-  - target:
-      kind: Ingress
-      name: mfe-shell
-    patch: |
-      - op: replace
-        path: /spec/tls/0/secretName
-        value: wildcard-app-wecoya-online-tls
 labels:
   - pairs:
       psc.wecoya.io/service: MFE_NAME
       psc.wecoya.io/environment: prod
     includeSelectors: false
-      name: mfe-shell
-    patch: |
-      - op: replace
-        path: /spec/replicas
-        value: 3
-
