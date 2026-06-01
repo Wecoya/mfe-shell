@@ -11,7 +11,10 @@ metadata:
     psc.wecoya.io/component-type: "microfrontend"
     psc.wecoya.io/template: "vue-mfe"
     psc.wecoya.io/skills-managed: "true"
-    backstage.io/badge-url: "https://grafana.wecoya.internal/d/platform-ci-health?var-repo=Wecoya/MFE_NAME"
+    argocd/app-name: "MFE_NAME-dev"
+    argocd/app-namespace: argocd
+    backstage.io/kubernetes-id: MFE_NAME
+    backstage.io/badge-url: "https://monitoring.plattform.wecoya.online/d/platform-ci-health/platform-ci-health?var-repo=Wecoya/MFE_NAME"
   tags:
     - typescript
     - vue
@@ -20,8 +23,16 @@ metadata:
     - url: "https://github.com/Wecoya/MFE_NAME"
       title: "GitHub Repository"
       icon: github
+    - url: "https://monitoring.plattform.wecoya.online/d/platform-ci-health/platform-ci-health?var-repo=Wecoya%2FMFE_NAME&var-template=vue-mfe&var-branch=main&var-environment=dev"
+      title: "CI Health"
+      icon: dashboard
 spec:
   type: website
   lifecycle: production
   owner: "group:wecoya/platform-team"
   system: platform-infrastructure
+  providesApis: []
+  consumesApis: []
+  # Add the backend services this MFE calls here, e.g.:
+  # dependsOnComponents:
+  #   - component:default/claims-service

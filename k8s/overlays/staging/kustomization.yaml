@@ -22,39 +22,7 @@ patches:
   - path: patches/configmap.yaml
     target:
       kind: ConfigMap
-       name: mfe-shell-config
-    patch: |
-      - op: replace
-        path: /data/KEYCLOAK_URL
-        value: "https://auth.staging.wecoya.de"
-      - op: replace
-        path: /data/MFE_REMOTES
-        value: '{"claims":"https://claims.staging.wecoya.de/remoteEntry.js"}'
-      name: MFE_NAME-config   
-
-  - target:
-      group: monitoring.coreos.com
-      version: v1
-      kind: PrometheusRule
-      name: mfe-shell-alerts
-    path: patches/prometheus-rule.yaml
-
-
-  # Override Ingress host to staging-specific subdomain.
-  # DNS record shell-staging.app.wecoya.online is managed explicitly via Crossplane.
-  - target:
-      kind: Ingress
-      name: mfe-shell
-    patch: |
-      - op: replace
-        path: /spec/tls/0/hosts/0
-        value: shell-staging.app.wecoya.online
-      - op: replace
-        path: /spec/tls/0/secretName
-        value: wildcard-app-wecoya-online-tls
-      - op: replace
-        path: /spec/rules/0/host
-        value: shell-staging.app.wecoya.online
+      name: MFE_NAME-config
 
 labels:
   - pairs:

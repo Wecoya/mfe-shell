@@ -1,17 +1,31 @@
+# GitHub Actions: Promote Image to Staging or Prod
+#
+# Manual trigger (workflow_dispatch) only.
+# Promotes a known image SHA from dev → staging or dev → prod.
+#
+# Inputs:
+#   target_env  — staging | prod
+#   image_sha   — the container image SHA to promote (short SHA from ghcr.io)
+#
+# Prod requires approval via the GitHub Environment "production" gate.
+# The workflow writes to kustomization.yaml ONLY after the gate is approved.
+#
+# Audit trail: every promotion is recorded as a Git commit:
+#   chore(deploy): promote <sha> to <env>
 name: Promote to Environment
 
 on:
   workflow_dispatch:
     inputs:
       target_env:
-        description: "Target environment"
+        description: Target environment
         required: true
         type: choice
         options:
           - staging
           - prod
       image_sha:
-        description: "Full 40-char image SHA to promote (from ghcr.io/wecoya/<service>:<sha>)"
+        description: Image SHA to promote (e.g. abc1234)
         required: true
         type: string
 
