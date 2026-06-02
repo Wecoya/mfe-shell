@@ -1,23 +1,23 @@
 apiVersion: backstage.io/v1alpha1
 kind: Component
 metadata:
-  name: MFE_NAME
+  name: mfe-shell
   description: "A @wecoya Vue 3 Microfrontend"
   annotations:
-    github.com/project-slug: "Wecoya/MFE_NAME"
+    github.com/project-slug: "Wecoya/mfe-shell"
     backstage.io/techdocs-ref: "dir:."
-    psc.wecoya.io/source-repo: "https://github.com/Wecoya/MFE_NAME"
-    psc.wecoya.io/workspace-path: "apps/MFE_NAME"
+    psc.wecoya.io/source-repo: "https://github.com/Wecoya/mfe-shell"
+    psc.wecoya.io/workspace-path: "apps/mfe-shell"
     psc.wecoya.io/component-type: "microfrontend"
     psc.wecoya.io/template: "vue-mfe"
     psc.wecoya.io/skills-managed: "true"
-    backstage.io/badge-url: "https://grafana.wecoya.internal/d/platform-ci-health?var-repo=Wecoya/MFE_NAME"
+    backstage.io/badge-url: "https://grafana.wecoya.internal/d/platform-ci-health?var-repo=Wecoya/mfe-shell"
   tags:
     - typescript
     - vue
     - microfrontend
   links:
-    - url: "https://github.com/Wecoya/MFE_NAME"
+    - url: "https://github.com/Wecoya/mfe-shell"
       title: "GitHub Repository"
       icon: github
 spec:
