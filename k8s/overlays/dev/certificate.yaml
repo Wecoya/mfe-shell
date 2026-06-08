@@ -1,7 +1,9 @@
 ---
 # Certificate: mfe-shell-dev-tls
 #
-# TLS certificate for mfe-shell-dev.app.wecoya.online via Let's Encrypt DNS-01.
+# TLS certificate for shell-dev.app.wecoya.online via Let's Encrypt DNS-01.
+# Note: the Ingress uses wildcard-app-wecoya-online-tls; this cert is provisioned
+# as a dedicated fallback and for future direct-cert migration.
 # Uses the App Cluster ClusterIssuer (letsencrypt-prod-dns01-app).
 # Issuance: up to 5 min on first issue (DNS-01 propagation).
 apiVersion: cert-manager.io/v1
@@ -19,7 +21,7 @@ metadata:
 spec:
   secretName: mfe-shell-dev-tls
   dnsNames:
-    - mfe-shell-dev.app.wecoya.online
+    - shell-dev.app.wecoya.online
   issuerRef:
     name: letsencrypt-prod-dns01-app
     kind: ClusterIssuer

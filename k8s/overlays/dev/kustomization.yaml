@@ -2,7 +2,7 @@
 # Kustomize overlay: dev
 #
 # Deploys mfe-shell to namespace mfe-shell-dev on psc-app-cluster.
-# Domain: mfe-shell-dev.app.wecoya.online
+# Domain: shell-dev.app.wecoya.online
 #
 # CI flow: merge to main → build.yml pushes image, updates newTag here →
 #   ArgoCD auto-syncs mfe-shell-dev (~5 min propagation).
@@ -15,7 +15,7 @@ resources:
   - ../../base
   - resource-quota.yaml
   - certificate.yaml
-  - patches/ingress.yaml
+  - patches/ingress.yaml   # standalone dev Ingress resource (NOT a patch file despite its path)
 
 images:
   - name: ghcr.io/wecoya/mfe-shell

@@ -9,7 +9,7 @@ metadata:
   name: dev-default-quota
   labels:
     app.kubernetes.io/component: resource-quota
-    app.kubernetes.io/part-of: mfe-shell
+    app.kubernetes.io/part-of: wecoya-platform
     app.kubernetes.io/managed-by: argocd
 spec:
   hard:

@@ -13,7 +13,7 @@ namespace: mfe-shell-prod
 resources:
   - ../../base
   - certificate.yaml
-  - patches/ingress.yaml
+  - patches/ingress.yaml   # standalone prod Ingress resource (NOT a patch file despite its path)
 
 images:
   - name: ghcr.io/wecoya/mfe-shell

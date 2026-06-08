@@ -4,6 +4,6 @@ kind: ConfigMap
 metadata:
   name: mfe-shell-config
 data:
-  KEYCLOAK_URL: "https://id.plattform.wecoya.online"
+  KEYCLOAK_URL: "https://auth.staging.wecoya.de"
   KEYCLOAK_REALM: "wecoya-staging"
   API_BASE_URL: "https://api-staging.wecoya.online"
