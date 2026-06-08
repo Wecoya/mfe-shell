@@ -1,23 +1,23 @@
 ---
-# Deployment: MFE_NAME
+# Deployment: mfe-shell
 #
 # Serves the Vue 3 Module Federation microfrontend as a static nginx app.
 # Runtime config (/config.json) is generated at container startup from the
-# MFE_NAME-config ConfigMap (env-specific API URLs + remote entry endpoints).
+# mfe-shell-config ConfigMap (env-specific API URLs + remote entry endpoints).
 #
 # Security: multi-stage image (node build → nginx:alpine), non-root, read-only root fs.
 # Writable dirs for nginx: /tmp, /var/cache/nginx, /var/run (emptyDir volumes).
 #
 # Overlays patch:
-#   - namespace (MFE_NAME-{dev,staging,prod})
+#   - namespace (mfe-shell-{dev,staging,prod})
 #   - image tag (newTag in kustomization.yaml)
 #   - replicas (prod: 2)
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: MFE_NAME
+  name: mfe-shell
   labels:
-    app.kubernetes.io/name: MFE_NAME
+    app.kubernetes.io/name: mfe-shell
     app.kubernetes.io/component: frontend
     app.kubernetes.io/part-of: wecoya-platform
     app.kubernetes.io/managed-by: argocd
@@ -30,11 +30,11 @@ spec:
   replicas: 1
   selector:
     matchLabels:
-      app.kubernetes.io/name: MFE_NAME
+      app.kubernetes.io/name: mfe-shell
   template:
     metadata:
       labels:
-        app.kubernetes.io/name: MFE_NAME
+        app.kubernetes.io/name: mfe-shell
         app.kubernetes.io/component: frontend
         app.kubernetes.io/part-of: wecoya-platform
     spec:
@@ -43,7 +43,7 @@ spec:
         - name: ghcr-pull-secret
       initContainers:
         - name: config-gen
-          image: ghcr.io/wecoya/MFE_NAME:main
+          image: ghcr.io/wecoya/mfe-shell:main
           command:
             - sh
             - -c
@@ -60,7 +60,7 @@ spec:
               echo "Done."
           envFrom:
             - configMapRef:
-                name: MFE_NAME-config
+                name: mfe-shell-config
           volumeMounts:
             - name: config-volume
               mountPath: /config
@@ -80,7 +80,7 @@ spec:
               memory: 64Mi
       containers:
         - name: nginx
-          image: ghcr.io/wecoya/MFE_NAME:main
+          image: ghcr.io/wecoya/mfe-shell:main
           ports:
             - containerPort: 8080
               name: http

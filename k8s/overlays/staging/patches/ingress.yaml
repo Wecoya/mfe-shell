@@ -2,31 +2,31 @@
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: MFE_NAME
-  namespace: MFE_NAME-staging
+  name: mfe-shell
+  namespace: mfe-shell-staging
   labels:
-    app.kubernetes.io/name: MFE_NAME
+    app.kubernetes.io/name: mfe-shell
     app.kubernetes.io/component: ingress
     app.kubernetes.io/part-of: wecoya-platform
     app.kubernetes.io/managed-by: argocd
   annotations:
     argocd.argoproj.io/sync-wave: "15"
     ingress.cilium.io/force-https: "true"
-    # DNS: Crossplane HetznerDNSRecord in infra/base/crossplane/claims/dns/MFE_NAME-staging-app-a.yaml
+    # DNS: Crossplane HetznerDNSRecord in infra/base/crossplane/claims/dns/mfe-shell-staging-app-a.yaml
 spec:
   ingressClassName: cilium
   tls:
     - hosts:
-        - MFE_NAME-staging.app.wecoya.online
-      secretName: MFE_NAME-staging-tls
+        - mfe-shell-staging.app.wecoya.online
+      secretName: mfe-shell-staging-tls
   rules:
-    - host: MFE_NAME-staging.app.wecoya.online
+    - host: mfe-shell-staging.app.wecoya.online
       http:
         paths:
           - path: /
             pathType: Prefix
             backend:
               service:
-                name: MFE_NAME
+                name: mfe-shell
                 port:
                   number: 8080

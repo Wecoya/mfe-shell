@@ -2,19 +2,19 @@
 apiVersion: cert-manager.io/v1
 kind: Certificate
 metadata:
-  name: MFE_NAME-staging-tls
-  namespace: MFE_NAME-staging
+  name: mfe-shell-staging-tls
+  namespace: mfe-shell-staging
   labels:
-    app.kubernetes.io/name: MFE_NAME-staging-tls
+    app.kubernetes.io/name: mfe-shell-staging-tls
     app.kubernetes.io/component: certificate
     app.kubernetes.io/part-of: wecoya-platform
     app.kubernetes.io/managed-by: argocd
   annotations:
     argocd.argoproj.io/sync-wave: "20"
 spec:
-  secretName: MFE_NAME-staging-tls
+  secretName: mfe-shell-staging-tls
   dnsNames:
-    - MFE_NAME-staging.app.wecoya.online
+    - mfe-shell-staging.app.wecoya.online
   issuerRef:
     name: letsencrypt-prod-dns01-app
     kind: ClusterIssuer
