@@ -1,4 +1,3 @@
----
 # Kustomize overlay: dev
 #
 # Deploys mfe-shell to namespace mfe-shell-dev on psc-app-cluster.
@@ -12,39 +11,39 @@ kind: Kustomization
 namespace: mfe-shell-dev
 
 resources:
-  - ../../base
-  - resource-quota.yaml
-  - certificate.yaml
-  - patches/ingress.yaml   # standalone dev Ingress resource (NOT a patch file despite its path)
+- ../../base
+- resource-quota.yaml
+- certificate.yaml
+- patches/ingress.yaml
 
 images:
-  - name: ghcr.io/wecoya/mfe-shell
-    newTag: main   # CI rewrites this to the actual SHA on each merge
+- name: ghcr.io/wecoya/mfe-shell
+  newName: ghcr.io/wecoya/mfe-shell
+  newTag: 58ca1b4
 
-patches:
-  - path: patches/configmap.yaml
-    target:
-      kind: ConfigMap
-      name: mfe-shell-config
   # Override Ingress host to dev-specific subdomain.
   # DNS is managed explicitly via Crossplane HetznerDNSRecord in infra repo.
   # TLS uses the shared wildcard certificate for app.wecoya.online.
-  - target:
-      kind: Ingress
-      name: mfe-shell
-    patch: |
-      - op: replace
-        path: /spec/tls/0/hosts/0
-        value: shell-dev.app.wecoya.online
-      - op: replace
-        path: /spec/tls/0/secretName
-        value: wildcard-app-wecoya-online-tls
-      - op: replace
-        path: /spec/rules/0/host
-        value: shell-dev.app.wecoya.online
+patches:
+- path: patches/configmap.yaml
+  target:
+    kind: ConfigMap
+    name: mfe-shell-config
+- patch: |
+    - op: replace
+      path: /spec/tls/0/hosts/0
+      value: shell-dev.app.wecoya.online
+    - op: replace
+      path: /spec/tls/0/secretName
+      value: wildcard-app-wecoya-online-tls
+    - op: replace
+      path: /spec/rules/0/host
+      value: shell-dev.app.wecoya.online
+  target:
+    kind: Ingress
+    name: mfe-shell
 
 labels:
-  - pairs:
-      psc.wecoya.io/service: mfe-shell
-      psc.wecoya.io/environment: dev
-    includeSelectors: false
+- pairs:
+    psc.wecoya.io/environment: dev
+    psc.wecoya.io/service: mfe-shell
