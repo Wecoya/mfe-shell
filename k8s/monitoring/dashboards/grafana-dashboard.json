@@ -28,7 +28,7 @@
           "uid": "${datasource}"
         },
         "enable": true,
-        "expr": "ci_deployment_timestamp_seconds{job=\"$service\", namespace=\"$namespace\", cluster=\"$cluster\"} > 0",
+        "expr": "ci_deployment_timestamp_seconds{namespace=\"mfe-shell\", cluster=\"$cluster\"} > 0",
         "hide": false,
         "iconColor": "green",
         "name": "Deployments",
@@ -42,7 +42,7 @@
           "uid": "${datasource}"
         },
         "enable": true,
-        "expr": "ci_deployment_failed_timestamp_seconds{job=\"$service\", namespace=\"$namespace\", cluster=\"$cluster\"} > 0",
+        "expr": "ci_deployment_failed_timestamp_seconds{namespace=\"mfe-shell\", cluster=\"$cluster\"} > 0",
         "hide": false,
         "iconColor": "red",
         "name": "Failed Deploys",
@@ -127,7 +127,9 @@
         "justifyMode": "center",
         "orientation": "auto",
         "reduceOptions": {
-          "calcs": ["lastNotNull"],
+          "calcs": [
+            "lastNotNull"
+          ],
           "fields": "",
           "values": false
         },
@@ -135,7 +137,7 @@
       },
       "targets": [
         {
-          "expr": "nginx_up{job=\"$service\", cluster=\"$cluster\"}",
+          "expr": "nginx_up{cluster=\"$cluster\"}",
           "legendFormat": "nginx UP",
           "refId": "A"
         }
@@ -180,7 +182,9 @@
         "justifyMode": "center",
         "orientation": "auto",
         "reduceOptions": {
-          "calcs": ["lastNotNull"],
+          "calcs": [
+            "lastNotNull"
+          ],
           "fields": "",
           "values": false
         },
@@ -189,7 +193,7 @@
       },
       "targets": [
         {
-          "expr": "rate(nginx_http_requests_total{job=\"$service\", cluster=\"$cluster\"}[2m])",
+          "expr": "rate(nginx_http_requests_total{cluster=\"$cluster\"}[2m])",
           "legendFormat": "req/s",
           "refId": "A"
         }
@@ -241,7 +245,9 @@
         "justifyMode": "center",
         "orientation": "auto",
         "reduceOptions": {
-          "calcs": ["lastNotNull"],
+          "calcs": [
+            "lastNotNull"
+          ],
           "fields": "",
           "values": false
         },
@@ -250,7 +256,7 @@
       },
       "targets": [
         {
-          "expr": "increase(kube_pod_container_restarts_total{container=\"nginx\", namespace=~\"$service-.*\", cluster=\"$cluster\"}[15m])",
+          "expr": "increase(kube_pod_container_restarts_total{container=\"nginx\", namespace=\"mfe-shell\", cluster=\"$cluster\"}[15m])",
           "legendFormat": "restarts",
           "refId": "A"
         }
@@ -302,7 +308,9 @@
         "justifyMode": "center",
         "orientation": "auto",
         "reduceOptions": {
-          "calcs": ["lastNotNull"],
+          "calcs": [
+            "lastNotNull"
+          ],
           "fields": "",
           "values": false
         },
@@ -310,7 +318,7 @@
       },
       "targets": [
         {
-          "expr": "time() - max(ci_deployment_timestamp_seconds{job=\"$service\", namespace=\"$namespace\", cluster=\"$cluster\"})",
+          "expr": "time() - max(ci_deployment_timestamp_seconds{namespace=\"mfe-shell\", cluster=\"$cluster\"})",
           "legendFormat": "Age",
           "refId": "A"
         }
@@ -358,7 +366,7 @@
       },
       "targets": [
         {
-          "expr": "rate(nginx_http_requests_total{job=\"$service\", cluster=\"$cluster\"}[2m])",
+          "expr": "rate(nginx_http_requests_total{cluster=\"$cluster\"}[2m])",
           "legendFormat": "req/s",
           "refId": "A"
         }
@@ -394,22 +402,22 @@
       },
       "targets": [
         {
-          "expr": "nginx_connections_active{job=\"$service\", cluster=\"$cluster\"}",
+          "expr": "nginx_connections_active{cluster=\"$cluster\"}",
           "legendFormat": "active",
           "refId": "A"
         },
         {
-          "expr": "nginx_connections_waiting{job=\"$service\", cluster=\"$cluster\"}",
+          "expr": "nginx_connections_waiting{cluster=\"$cluster\"}",
           "legendFormat": "waiting",
           "refId": "B"
         },
         {
-          "expr": "nginx_connections_reading{job=\"$service\", cluster=\"$cluster\"}",
+          "expr": "nginx_connections_reading{cluster=\"$cluster\"}",
           "legendFormat": "reading",
           "refId": "C"
         },
         {
-          "expr": "nginx_connections_writing{job=\"$service\", cluster=\"$cluster\"}",
+          "expr": "nginx_connections_writing{cluster=\"$cluster\"}",
           "legendFormat": "writing",
           "refId": "D"
         }
@@ -440,7 +448,7 @@
       "id": 3,
       "targets": [
         {
-          "expr": "increase(kube_pod_container_restarts_total{container=\"nginx\", namespace=~\"$service-.*\", cluster=\"$cluster\"}[5m])",
+          "expr": "increase(kube_pod_container_restarts_total{container=\"nginx\", namespace=\"mfe-shell\", cluster=\"$cluster\"}[5m])",
           "legendFormat": "{{pod}} restarts",
           "refId": "A"
         }
@@ -506,12 +514,12 @@
       },
       "targets": [
         {
-          "expr": "sum(rate({namespace=\"$namespace\", cluster=\"$cluster\", app_kubernetes_io_name=\"$service\"} | pattern `<_> \"<method> <_> <_>\" <status> <_>` | status >= 500 [2m])) / sum(rate({namespace=\"$namespace\", cluster=\"$cluster\", app_kubernetes_io_name=\"$service\"} [2m]))",
+          "expr": "sum(rate({namespace=\"mfe-shell\", cluster=\"$cluster\"} | pattern `<_> \"<method> <_> <_>\" <status> <_>` | status >= 500 [2m])) / sum(rate({namespace=\"mfe-shell\", cluster=\"$cluster\"} [2m]))",
           "legendFormat": "5xx error rate",
           "refId": "A"
         },
         {
-          "expr": "sum(rate({namespace=\"$namespace\", cluster=\"$cluster\", app_kubernetes_io_name=\"$service\"} | pattern `<_> \"<method> <_> <_>\" <status> <_>` | status >= 400 | status < 500 [2m])) / sum(rate({namespace=\"$namespace\", cluster=\"$cluster\", app_kubernetes_io_name=\"$service\"} [2m]))",
+          "expr": "sum(rate({namespace=\"mfe-shell\", cluster=\"$cluster\"} | pattern `<_> \"<method> <_> <_>\" <status> <_>` | status >= 400 | status < 500 [2m])) / sum(rate({namespace=\"mfe-shell\", cluster=\"$cluster\"} [2m]))",
           "legendFormat": "4xx rate",
           "refId": "B"
         }
@@ -555,7 +563,7 @@
       "id": 4,
       "targets": [
         {
-          "expr": "sum(rate(container_cpu_usage_seconds_total{namespace=\"$namespace\", cluster=\"$cluster\", pod=~\"$service.*\", container!=\"\"}[2m])) by (pod)",
+          "expr": "sum(rate(container_cpu_usage_seconds_total{namespace=\"mfe-shell\", cluster=\"$cluster\", container!=\"\"}[2m])) by (pod)",
           "legendFormat": "{{pod}}",
           "refId": "A"
         }
@@ -586,7 +594,7 @@
       "id": 5,
       "targets": [
         {
-          "expr": "sum(container_memory_working_set_bytes{namespace=\"$namespace\", cluster=\"$cluster\", pod=~\"$service.*\", container!=\"\"}) by (pod)",
+          "expr": "sum(container_memory_working_set_bytes{namespace=\"mfe-shell\", cluster=\"$cluster\", container!=\"\"}) by (pod)",
           "legendFormat": "{{pod}}",
           "refId": "A"
         }
@@ -617,7 +625,7 @@
       "id": 6,
       "targets": [
         {
-          "expr": "count(kube_pod_info{namespace=\"$namespace\", cluster=\"$cluster\", pod=~\"$service.*\"})",
+          "expr": "count(kube_pod_info{namespace=\"mfe-shell\", cluster=\"$cluster\"})",
           "legendFormat": "pods",
           "refId": "A"
         }
@@ -665,7 +673,7 @@
       },
       "targets": [
         {
-          "expr": "{namespace=\"$namespace\", app_kubernetes_io_name=\"$service\", cluster=\"$cluster\"} |= \"\"",
+          "expr": "{namespace=\"mfe-shell\", cluster=\"$cluster\"} |= \"\"",
           "legendFormat": "",
           "refId": "A",
           "maxLines": 100
@@ -675,7 +683,7 @@
       "type": "logs"
     }
   ],
-  "refresh": "5m",
+  "refresh": "30s",
   "schemaVersion": 37,
   "tags": [
     "mfe",
@@ -722,47 +730,10 @@
         "name": "cluster",
         "options": [],
         "query": "label_values(up, cluster)",
-        "refresh": 1,
+        "refresh": 2,
         "sort": 1,
         "type": "query",
         "label": "Cluster"
-      },
-      {
-        {"selected": true, "text": "psc-app-01", "value": "psc-app-01"},
-        "datasource": {
-          "type": "prometheus",
-          "uid": "${datasource}"
-        },
-        "definition": "label_values(kube_namespace_labels{cluster=\"$cluster\"}, namespace)",
-        "hide": 0,
-        "includeAll": false,
-        "name": "namespace",
-        "options": [],
-        "query": "label_values(kube_namespace_labels{cluster=\"$cluster\"}, namespace)",
-        "refresh": 1,
-        "sort": 1,
-        "type": "query",
-        "label": "Namespace"
-      },
-      {
-        "current": {
-          "text": "mfe-name",
-          "value": "mfe-name"
-        },
-        "datasource": {
-          "type": "prometheus",
-          "uid": "${datasource}"
-        },
-        "definition": "label_values(nginx_up{namespace=\"$namespace\", cluster=\"$cluster\"}, job)",
-        "hide": 0,
-        "includeAll": false,
-        "name": "service",
-        "options": [],
-        "query": "label_values(nginx_up{namespace=\"$namespace\", cluster=\"$cluster\"}, job)",
-        "refresh": 1,
-        "sort": 1,
-        "type": "query",
-        "label": "MFE Service"
       },
       {
         "current": {
@@ -801,7 +772,7 @@
   },
   "timepicker": {},
   "timezone": "browser",
-  "title": "MFE Overview — $service",
+  "title": "MFE Overview \u2014 $service",
   "uid": "mfe-mfe-shell",
   "version": 1
 }
