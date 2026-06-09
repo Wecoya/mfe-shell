@@ -1,17 +1,15 @@
 ---
 # Ingress: mfe-shell (dev)
 #
-# Exposes mfe-shell-dev at mfe-shell-dev.app.wecoya.online.
-# TLS terminated at Ingress using the cert from certificate.yaml.
+# Exposes mfe-shell at shell-dev.app.wecoya.online.
+# TLS uses wildcard-app-wecoya-online-tls (patched by kustomization.yaml).
 #
-# DNS: Managed via Crossplane HetznerDNSRecord Claim in the infra repo.
-#   File: infra/base/crossplane/claims/dns/mfe-shell-dev-app-a.yaml
-#   ExternalDNS source:ingress is disabled on app-cluster (caused node-IP conflicts).
+# DNS: shell-dev.app.wecoya.online managed via Crossplane HetznerDNSRecord.
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: mfe-shell
-  namespace: mfe-shell-dev
+  namespace: mfe-shell
   labels:
     app.kubernetes.io/name: mfe-shell
     app.kubernetes.io/component: ingress
@@ -24,10 +22,10 @@ spec:
   ingressClassName: cilium
   tls:
     - hosts:
-        - mfe-shell-dev.app.wecoya.online
-      secretName: mfe-shell-dev-tls
+        - shell-dev.app.wecoya.online
+      secretName: wildcard-app-wecoya-online-tls
   rules:
-    - host: mfe-shell-dev.app.wecoya.online
+    - host: shell-dev.app.wecoya.online
       http:
         paths:
           - path: /

@@ -1,19 +1,18 @@
 # Kustomize overlay: dev
 #
-# Deploys mfe-shell to namespace mfe-shell-dev on psc-app-cluster.
-# Domain: shell-dev.app.wecoya.online
+# Deploys mfe-shell to namespace mfe-shell on psc-app-cluster.
+# Domain: shell-dev.app.wecoya.online (wildcard-app-wecoya-online-tls)
 #
 # CI flow: merge to main → build.yml pushes image, updates newTag here →
-#   ArgoCD auto-syncs mfe-shell-dev (~5 min propagation).
+#   ArgoCD auto-syncs (~5 min propagation).
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 
-namespace: mfe-shell-dev
+namespace: mfe-shell
 
 resources:
 - ../../base
 - resource-quota.yaml
-- certificate.yaml
 - patches/ingress.yaml
 
 images:
