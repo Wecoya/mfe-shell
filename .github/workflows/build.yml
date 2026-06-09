@@ -89,17 +89,3 @@ jobs:
           git add k8s/overlays/dev/kustomization.yaml
           git commit -m "chore(deploy): update dev image to ${IMAGE_SHA}" || echo "No changes to commit"
           git push
-
-  push-metrics:
-    name: Push CI Metrics
-    needs: [build-and-push, update-dev-overlay]
-    if: always()
-    permissions: {}
-    uses: Wecoya/private-sovereign-cloud/.github/workflows/push-build-metrics.yml@main
-    with:
-      status: ${{ needs.update-dev-overlay.result }}
-      type: deploy
-      env: dev
-      version: ${{ needs.build-and-push.outputs.image-sha }}
-    secrets:
-      TAILSCALE_AUTHKEY: ${{ secrets.TAILSCALE_AUTHKEY }}
