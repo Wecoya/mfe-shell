@@ -23,7 +23,7 @@ spec:
   tls:
     - hosts:
         - shell-dev.app.wecoya.online
-      secretName: wildcard-app-wecoya-online-tls
+      secretName: mfe-shell-dev-tls
   rules:
     - host: shell-dev.app.wecoya.online
       http:

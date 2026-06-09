@@ -13,6 +13,7 @@ namespace: mfe-shell
 resources:
 - ../../base
 - resource-quota.yaml
+- certificate.yaml
 - patches/ingress.yaml
 
 images:
@@ -34,7 +35,7 @@ patches:
       value: shell-dev.app.wecoya.online
     - op: replace
       path: /spec/tls/0/secretName
-      value: wildcard-app-wecoya-online-tls
+      value: mfe-shell-dev-tls
     - op: replace
       path: /spec/rules/0/host
       value: shell-dev.app.wecoya.online
