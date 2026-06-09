@@ -3,7 +3,7 @@ _subdirectory: .
 
 # Copier-managed files (regenerated on template-sync — backup custom edits first):
 #   .github/workflows/main.yml, pr.yml, promote.yml, agent-run.yml,
-#   bootstrap-repo.yml, codeql.yml,
+#   bootstrap-repo.yml, codeql.yml, agent.yml,
 #   k8s/base/service-monitor.yaml,
 #   k8s/monitoring/dashboards/grafana-dashboard.json,
 #   k8s/monitoring/dashboards/kustomization.yaml
