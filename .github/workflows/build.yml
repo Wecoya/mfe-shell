@@ -2,9 +2,9 @@
 #
 # Triggers on every push to main:
 #   1. Build multi-stage Docker image (Vue 3 Vite + nginx)
-#   2. Push to ghcr.io/wecoya/MFE_NAME:<sha>
+#   2. Push to ghcr.io/wecoya/mfe-shell:<sha>
 #   3. Update k8s/overlays/dev/kustomization.yaml with the new image SHA
-#   4. Commit and push → ArgoCD auto-syncs MFE_NAME-dev
+#   4. Commit and push → ArgoCD auto-syncs mfe-shell-dev
 #
 # Step 3 is CONDITIONAL on step 2 succeeding (needs: [build-and-push]).
 # A failed Docker build never triggers a kustomization update.
@@ -20,7 +20,7 @@ permissions: {}
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_NAME: wecoya/MFE_NAME
+  IMAGE_NAME: wecoya/mfe-shell
 
 jobs:
   build-and-push:
@@ -78,7 +78,7 @@ jobs:
           IMAGE_SHA: ${{ needs.build-and-push.outputs.image-sha }}
         run: |
           cd k8s/overlays/dev
-          kustomize edit set image ghcr.io/wecoya/MFE_NAME=ghcr.io/wecoya/MFE_NAME:${IMAGE_SHA}
+          kustomize edit set image ghcr.io/wecoya/mfe-shell=ghcr.io/wecoya/mfe-shell:${IMAGE_SHA}
 
       - name: Commit and push
         env:
