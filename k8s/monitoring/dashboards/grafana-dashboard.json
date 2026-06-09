@@ -675,7 +675,7 @@
       "type": "logs"
     }
   ],
-  "refresh": "30s",
+  "refresh": "5m",
   "schemaVersion": 37,
   "tags": [
     "mfe",
@@ -722,16 +722,13 @@
         "name": "cluster",
         "options": [],
         "query": "label_values(up, cluster)",
-        "refresh": 2,
+        "refresh": 1,
         "sort": 1,
         "type": "query",
         "label": "Cluster"
       },
       {
-        "current": {
-          "text": "mfe-name-dev",
-          "value": "mfe-name-dev"
-        },
+        {"selected": true, "text": "psc-app-01", "value": "psc-app-01"},
         "datasource": {
           "type": "prometheus",
           "uid": "${datasource}"
@@ -742,7 +739,7 @@
         "name": "namespace",
         "options": [],
         "query": "label_values(kube_namespace_labels{cluster=\"$cluster\"}, namespace)",
-        "refresh": 2,
+        "refresh": 1,
         "sort": 1,
         "type": "query",
         "label": "Namespace"
@@ -762,7 +759,7 @@
         "name": "service",
         "options": [],
         "query": "label_values(nginx_up{namespace=\"$namespace\", cluster=\"$cluster\"}, job)",
-        "refresh": 2,
+        "refresh": 1,
         "sort": 1,
         "type": "query",
         "label": "MFE Service"
