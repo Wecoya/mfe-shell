@@ -4,6 +4,13 @@ on:
   pull_request:
     branches: [main]
 
+permissions:
+  actions: read
+  contents: read
+  security-events: write
+  checks: write
+  pull-requests: write
+
 jobs:
   quality:
     uses: Wecoya/platform-actions/.github/workflows/reusable-quality.yml@main
@@ -12,7 +19,43 @@ jobs:
       node-version: "22"
     secrets: inherit
 
+  codeql-mode-preflight:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write
+    steps:
+      - name: Verify advanced CodeQL compatibility
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+            try {
+              const response = await github.request("GET /repos/{owner}/{repo}/code-scanning/default-setup", {
+                owner,
+                repo,
+                headers: { "X-GitHub-Api-Version": "2022-11-28" }
+              });
+              const state = response.data?.state ?? "unknown";
+              core.info(`Code scanning default setup state: ${state}`);
+              if (state !== "not-configured") {
+                const message = `Code scanning default setup is '${state}'. Advanced CodeQL requires 'not-configured'. Run bootstrap-repo.yml or disable default setup in repo settings.`;
+                await core.summary.addHeading("CodeQL mode check failed").addRaw(message).write();
+                core.setFailed(message);
+              }
+            } catch (error) {
+              if (error.status === 404 || error.status === 403) {
+                core.info("Default setup endpoint returned 404/403; treating as not configured.");
+                return;
+              }
+              const message = `Failed to verify CodeQL mode (${error.status ?? "unknown"}): ${error.message}`;
+              await core.summary.addHeading("CodeQL mode check failed").addRaw(message).write();
+              core.setFailed(message);
+            }
+
   security:
+    needs: [quality, codeql-mode-preflight]
     uses: Wecoya/platform-actions/.github/workflows/reusable-security-scan.yml@main
     with:
       scan-dockerfile: true

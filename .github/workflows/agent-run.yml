@@ -1,0 +1,348 @@
+name: Autonomous Coding Agent
+
+on:
+  issue_comment:
+    types: [created]
+  pull_request:
+    types: [closed]
+
+concurrency:
+  group: agent-${{ github.repository }}-${{ github.event.issue.number || github.event.pull_request.number }}
+  cancel-in-progress: true
+
+# Restrictive global default — each job declares only the permissions it actually needs.
+permissions:
+  contents: read
+
+jobs:
+  parse-trigger:
+    if: github.event_name == 'issue_comment' && startsWith(github.event.comment.body, '/agent-start')
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write   # to post rejection comment
+    outputs:
+      issue_number: ${{ steps.parse.outputs.issue_number }}
+      task_id: ${{ steps.parse.outputs.task_id }}
+      draft: ${{ steps.parse.outputs.draft }}
+      authorized: ${{ steps.auth.outputs.authorized }}
+    steps:
+      - name: Parse trigger
+        id: parse
+        env:
+          ISSUE_NUMBER: ${{ github.event.issue.number }}
+          ISSUE_TITLE: ${{ github.event.issue.title }}
+          COMMENT_BODY: ${{ github.event.comment.body }}
+        run: |
+          echo "issue_number=${ISSUE_NUMBER}" >> "$GITHUB_OUTPUT"
+          TASK_ID=$(printf '%s' "$ISSUE_TITLE" | grep -oE '[0-9]+\.[0-9]+' | head -1)
+          echo "task_id=${TASK_ID}" >> "$GITHUB_OUTPUT"
+          if [[ "$COMMENT_BODY" == *"--draft"* ]]; then
+            echo "draft=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "draft=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Check authorized user
+        id: auth
+        env:
+          # Bind untrusted context expressions to env vars to prevent injection.
+          AUTH_USERS: ${{ vars.AGENT_AUTHORIZED_USERS }}
+          ACTOR: ${{ github.event.comment.user.login }}
+        run: |
+          if [[ -z "$AUTH_USERS" ]]; then
+            echo "authorized=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          # Validate that AUTH_USERS is parseable JSON before passing to jq.
+          if ! echo "$AUTH_USERS" | jq -e . >/dev/null 2>&1; then
+            echo "::error::AGENT_AUTHORIZED_USERS is not valid JSON. Check repository variable."
+            echo "authorized=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          if echo "$AUTH_USERS" | jq -e --arg actor "$ACTOR" 'index($actor) != null' >/dev/null 2>&1; then
+            echo "authorized=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "authorized=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Reject unauthorized trigger
+        if: steps.auth.outputs.authorized != 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_PAGER: cat
+          # Bind untrusted expressions to env vars to prevent injection.
+          ISSUE_NUMBER: ${{ github.event.issue.number }}
+          ACTOR: ${{ github.event.comment.user.login }}
+        run: |
+          gh issue comment "$ISSUE_NUMBER" \
+            --body "❌ Agent rejected: @${ACTOR} is not authorized to run /agent-start."
+          exit 1
+
+  check-dependencies:
+    if: github.event_name == 'issue_comment' && needs.parse-trigger.outputs.authorized == 'true'
+    needs: parse-trigger
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      issues: write
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5  # actions/checkout@v4.3.1
+
+      - name: Check task dependencies
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_PAGER: cat
+          TASK_ID: ${{ needs.parse-trigger.outputs.task_id }}
+          ISSUE: ${{ needs.parse-trigger.outputs.issue_number }}
+        run: |
+          # Service repos may not carry orchestrator task files.
+          if [[ ! -d "docs/tasks" ]]; then
+            gh issue comment "$ISSUE" --body "ℹ️ Agent note: skipping dependency check because this repository has no docs/tasks directory."
+            exit 0
+          fi
+
+          if [[ -z "$TASK_ID" ]]; then
+            gh issue comment "$ISSUE" --body "❌ Agent rejected: Could not parse task ID from issue title."
+            exit 1
+          fi
+
+          TASK_FILE=$(find docs/tasks -type f -name "${TASK_ID}*.md" | head -1)
+          if [[ -z "$TASK_FILE" ]]; then
+            gh issue comment "$ISSUE" --body "❌ Agent rejected: No local task file found for task ${TASK_ID}."
+            exit 1
+          fi
+
+          mapfile -t deps < <(grep -E '^depends_on:' "$TASK_FILE" | sed -E 's/^depends_on:[[:space:]]*//g' | tr ',' '\n' | sed -E 's/^[[:space:]]+|[[:space:]]+$//g' | sed '/^$/d')
+
+          if [[ ${#deps[@]} -eq 0 ]]; then
+            echo "No dependencies declared."
+            exit 0
+          fi
+
+          unresolved=()
+          for dep in "${deps[@]}"; do
+            if ! find docs/tasks/Done -type f -name "${dep}*.md" | grep -q .; then
+              unresolved+=("$dep")
+            fi
+          done
+
+          if [[ ${#unresolved[@]} -gt 0 ]]; then
+            msg="❌ Agent blocked: unresolved dependencies for task ${TASK_ID}:\n"
+            for dep in "${unresolved[@]}"; do
+              msg+="- ${dep}\n"
+            done
+            gh issue comment "$ISSUE" --body "$msg"
+            exit 1
+          fi
+
+  agent:
+    if: github.event_name == 'issue_comment' && needs.parse-trigger.outputs.authorized == 'true'
+    needs: [parse-trigger, check-dependencies]
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    permissions:
+      contents: write
+      pull-requests: write
+      issues: write
+    outputs:
+      branch: ${{ steps.branch.outputs.branch }}
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5  # actions/checkout@v4.3.1
+        with:
+          token: ${{ secrets.AGENT_PAT }}
+
+      - name: Setup Node
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020  # actions/setup-node@v4.4.0
+        with:
+          node-version: '20'
+
+      - name: task-start
+        env:
+          GH_TOKEN: ${{ secrets.AGENT_PAT }}
+          GH_PAGER: cat
+          TASK_ID: ${{ needs.parse-trigger.outputs.task_id }}
+          ISSUE_NUMBER: ${{ needs.parse-trigger.outputs.issue_number }}
+        run: |
+          # Correct path: scripts/ subdirectory, consistent with all other skills.
+          if [[ -x ".github/skills/task-start/scripts/task-start.sh" && -n "${TASK_ID}" ]]; then
+            bash .github/skills/task-start/scripts/task-start.sh --task-id "${TASK_ID}" --issue "${ISSUE_NUMBER}"
+          else
+            # Service repos have no docs/tasks — assign the issue as the start signal.
+            gh issue edit "${ISSUE_NUMBER}" --add-assignee "@me" >/dev/null || true
+            echo "task-start: no task-start.sh found; assigned issue #${ISSUE_NUMBER} as start signal."
+          fi
+
+      - name: branch-create
+        id: branch
+        env:
+          GH_TOKEN: ${{ secrets.AGENT_PAT }}
+          GH_PAGER: cat
+          ISSUE_TITLE: ${{ github.event.issue.title }}
+          ISSUE_NUMBER: ${{ needs.parse-trigger.outputs.issue_number }}
+          TASK_ID: ${{ needs.parse-trigger.outputs.task_id }}
+        run: |
+          # Scripts print informational lines to stderr; only the branch name reaches stdout.
+          BRANCH=$(bash .github/skills/branch-create/scripts/branch-create.sh \
+            --issue "$ISSUE_NUMBER" \
+            --task-id "$TASK_ID" \
+            --title "$ISSUE_TITLE" 2>&1 | tee /dev/stderr | tail -1)
+          echo "branch=${BRANCH}" >> "$GITHUB_OUTPUT"
+
+      # ── openspec-propose ──────────────────────────────────────────────────────
+      # Scaffold an OpenSpec change (proposal.md, design.md, tasks.md) from the
+      # issue body. The generated scaffold is committed to the feature branch so
+      # the subsequent apply-change step can read and implement it on the runner.
+      - name: openspec-propose
+        id: propose
+        env:
+          GH_TOKEN: ${{ secrets.AGENT_PAT }}
+          GH_PAGER: cat
+          ISSUE_NUMBER: ${{ needs.parse-trigger.outputs.issue_number }}
+          TASK_ID: ${{ needs.parse-trigger.outputs.task_id }}
+        run: |
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git config user.name  "github-actions[bot]"
+
+          ISSUE_JSON=$(gh issue view "$ISSUE_NUMBER" --json title,body)
+          ISSUE_TITLE=$(echo "$ISSUE_JSON" | jq -r '.title')
+          ISSUE_BODY=$(echo  "$ISSUE_JSON" | jq -r '.body // "No description provided."')
+
+          SLUG=$(printf '%s' "$ISSUE_TITLE" \
+            | tr '[:upper:]' '[:lower:]' \
+            | sed -E 's/[^a-z0-9]+/-/g' \
+            | sed -E 's/^-+|-+$//g')
+          CHANGE_NAME="task-${TASK_ID}-${SLUG}"
+          CHANGE_DIR="openspec/changes/${CHANGE_NAME}"
+
+          if [[ ! -d "$CHANGE_DIR" ]]; then
+            mkdir -p "${CHANGE_DIR}/specs"
+
+            cat > "${CHANGE_DIR}/.openspec.yaml" <<YAML
+          schema: spec-driven
+          created: $(date +%Y-%m-%d)
+          YAML
+
+            cat > "${CHANGE_DIR}/proposal.md" <<MD
+          # Proposal: ${ISSUE_TITLE}
+
+          **Task:** ${TASK_ID}
+          **Issue:** #${ISSUE_NUMBER}
+
+          ## What & Why
+
+          ${ISSUE_BODY}
+
+          ---
+          *Auto-scaffolded by agent-run.yml. Expand with design decisions before implementing.*
+          MD
+
+            cat > "${CHANGE_DIR}/design.md" <<MD
+          # Design: ${ISSUE_TITLE}
+
+          > TODO: Describe the technical approach, components touched, and key decisions.
+          MD
+
+            cat > "${CHANGE_DIR}/tasks.md" <<MD
+          # Tasks: ${ISSUE_TITLE}
+
+          > Auto-scaffolded from issue #${ISSUE_NUMBER}. Implement each task and check it off.
+
+          ## Implementation
+
+          - [ ] Analyse requirements from proposal.md
+          - [ ] Implement the changes described in the issue
+          - [ ] Add / update tests
+          - [ ] Update documentation
+          MD
+            echo "Created openspec change: ${CHANGE_NAME}"
+
+            # Commit the scaffold to the branch so apply-change.sh can read and
+            # implement it on the same runner filesystem.
+            git add "openspec/changes/${CHANGE_NAME}"
+            git commit -m "feat(spec): openspec scaffold for task ${TASK_ID} (issue #${ISSUE_NUMBER})"
+            # Inject token so push succeeds even when npm tooling flushed the
+            # actions/checkout credential store.
+            if [[ -n "${GITHUB_REPOSITORY:-}" && -n "${GH_TOKEN:-}" ]]; then
+              git remote set-url origin \
+                "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
+            else
+              echo "[propose] WARNING: GH_TOKEN or GITHUB_REPOSITORY unset — push may fail with 403" >&2
+            fi
+            git push origin HEAD
+          else
+            echo "Reusing existing openspec change: ${CHANGE_NAME}"
+          fi
+
+          echo "change_name=${CHANGE_NAME}" >> "$GITHUB_OUTPUT"
+
+      # ── openspec-apply-change ─────────────────────────────────────────────────
+      # Runner-native coding step: apply-change.sh runs entirely on the runner
+      # filesystem, commits its output, and pushes. pr-create (below) then opens
+      # a PR from those commits. Engine priority inside the script:
+      #   1. GitHub Copilot completions API  — real LLM implementation via REST
+      #   2. gh copilot suggest              — interactive local sessions only
+      #   3. Scaffold commit (STUB)          — deterministic fallback; plug in LLM later
+      - name: openspec-apply-change
+        id: coding
+        env:
+          GH_TOKEN: ${{ secrets.AGENT_PAT }}
+          GH_PAGER: cat
+          ISSUE_NUMBER: ${{ needs.parse-trigger.outputs.issue_number }}
+          TASK_ID: ${{ needs.parse-trigger.outputs.task_id }}
+          CHANGE_NAME: ${{ steps.propose.outputs.change_name }}
+        run: |
+          bash .github/skills/openspec-apply-change/scripts/apply-change.sh
+
+      - name: pr-create
+        id: pr
+        env:
+          GH_TOKEN: ${{ secrets.AGENT_PAT }}
+          GH_PAGER: cat
+          BRANCH: ${{ steps.branch.outputs.branch }}
+          ISSUE_NUMBER: ${{ needs.parse-trigger.outputs.issue_number }}
+          TASK_ID: ${{ needs.parse-trigger.outputs.task_id }}
+          DRAFT: ${{ needs.parse-trigger.outputs.draft }}
+        run: |
+          # Scripts write informational output to stderr; only the PR number reaches stdout.
+          PR_NUM=$(bash .github/skills/pr-create/scripts/pr-create.sh \
+            --branch "$BRANCH" \
+            --issue "$ISSUE_NUMBER" \
+            --title "feat(agent): task ${TASK_ID} autonomous implementation" \
+            --draft "$DRAFT" 2>&1 | tee /dev/stderr | tail -1)
+          echo "pr_number=${PR_NUM}" >> "$GITHUB_OUTPUT"
+
+  finalize:
+    # Only run for PRs opened by the agent (github-actions[bot]) on a feature/ branch.
+    # Branch-prefix alone is insufficient: any human can push a feature/ branch and
+    # trigger finalize with AGENT_PAT. The user.login check restricts this to PRs
+    # that were actually opened by the autonomous agent job.
+    if: |
+      github.event_name == 'pull_request' &&
+      github.event.pull_request.merged == true &&
+      startsWith(github.event.pull_request.head.ref, 'feature/') &&
+      github.event.pull_request.user.login == 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+      issues: write
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5  # actions/checkout@v4.3.1
+        with:
+          token: ${{ secrets.AGENT_PAT }}
+
+      - name: Setup Node.js (for openspec CLI)
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020  # actions/setup-node@v4.4.0
+        with:
+          node-version: '20'
+
+      - name: Install openspec CLI
+        run: npm install -g openspec
+
+      - name: Run finalize skill
+        env:
+          GH_TOKEN: ${{ secrets.AGENT_PAT }}
+          GH_PAGER: cat
+        run: bash .github/skills/finalize/scripts/finalize.sh

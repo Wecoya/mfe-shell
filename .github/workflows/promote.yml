@@ -11,7 +11,7 @@ on:
           - staging
           - prod
       image_sha:
-        description: "Full 40-char image SHA to promote (from ghcr.io/wecoya/<service>:<sha>)"
+        description: "Full image SHA to promote (from ghcr.io/wecoya/<service>:<sha>)"
         required: true
         type: string
 

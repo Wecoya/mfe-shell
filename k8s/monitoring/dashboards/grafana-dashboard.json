@@ -1,0 +1,810 @@
+{
+  "__inputs": [],
+  "__requires": [
+    {
+      "type": "grafana",
+      "id": "grafana",
+      "name": "Grafana",
+      "version": "10.0.0"
+    },
+    {
+      "type": "datasource",
+      "id": "prometheus",
+      "name": "Prometheus",
+      "version": "1.0.0"
+    },
+    {
+      "type": "datasource",
+      "id": "loki",
+      "name": "Loki",
+      "version": "1.0.0"
+    }
+  ],
+  "annotations": {
+    "list": [
+      {
+        "datasource": {
+          "type": "prometheus",
+          "uid": "${datasource}"
+        },
+        "enable": true,
+        "expr": "ci_deployment_timestamp_seconds{job=\"$service\", namespace=\"$namespace\", cluster=\"$cluster\"} > 0",
+        "hide": false,
+        "iconColor": "green",
+        "name": "Deployments",
+        "step": "60s",
+        "titleFormat": "Deploy",
+        "textFormat": ""
+      },
+      {
+        "datasource": {
+          "type": "prometheus",
+          "uid": "${datasource}"
+        },
+        "enable": true,
+        "expr": "ci_deployment_failed_timestamp_seconds{job=\"$service\", namespace=\"$namespace\", cluster=\"$cluster\"} > 0",
+        "hide": false,
+        "iconColor": "red",
+        "name": "Failed Deploys",
+        "step": "60s",
+        "titleFormat": "Deploy Failed",
+        "textFormat": ""
+      }
+    ]
+  },
+  "description": "nginx MFE metrics: request rate, error rate (from Loki), connections, pod restarts, resources",
+  "editable": false,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 1,
+  "id": null,
+  "links": [],
+  "panels": [
+    {
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 0
+      },
+      "id": 200,
+      "title": "MFE Health",
+      "type": "row"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [
+            {
+              "options": {
+                "0": {
+                  "color": "red",
+                  "index": 1,
+                  "text": "DOWN"
+                },
+                "1": {
+                  "color": "green",
+                  "index": 0,
+                  "text": "UP"
+                }
+              },
+              "type": "value"
+            }
+          ],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "red",
+                "value": null
+              },
+              {
+                "color": "green",
+                "value": 1
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 6,
+        "x": 0,
+        "y": 1
+      },
+      "id": 201,
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "center",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": ["lastNotNull"],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "auto"
+      },
+      "targets": [
+        {
+          "expr": "nginx_up{job=\"$service\", cluster=\"$cluster\"}",
+          "legendFormat": "nginx UP",
+          "refId": "A"
+        }
+      ],
+      "title": "nginx Up/Down",
+      "type": "stat",
+      "description": "UP when nginx-prometheus-exporter can scrape nginx stub_status."
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "unit": "reqps",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 6,
+        "x": 6,
+        "y": 1
+      },
+      "id": 202,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "center",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": ["lastNotNull"],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "auto",
+        "noValue": "No traffic"
+      },
+      "targets": [
+        {
+          "expr": "rate(nginx_http_requests_total{job=\"$service\", cluster=\"$cluster\"}[2m])",
+          "legendFormat": "req/s",
+          "refId": "A"
+        }
+      ],
+      "title": "Request Rate (2m)",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "unit": "short",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 1
+              },
+              {
+                "color": "red",
+                "value": 5
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 6,
+        "x": 12,
+        "y": 1
+      },
+      "id": 203,
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "center",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": ["lastNotNull"],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "auto",
+        "noValue": "0"
+      },
+      "targets": [
+        {
+          "expr": "increase(kube_pod_container_restarts_total{container=\"nginx\", namespace=~\"$service-.*\", cluster=\"$cluster\"}[15m])",
+          "legendFormat": "restarts",
+          "refId": "A"
+        }
+      ],
+      "title": "Pod Restarts (15m)",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "unit": "s",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 3600
+              },
+              {
+                "color": "red",
+                "value": 86400
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 6,
+        "x": 18,
+        "y": 1
+      },
+      "id": 204,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "center",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": ["lastNotNull"],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "auto"
+      },
+      "targets": [
+        {
+          "expr": "time() - max(ci_deployment_timestamp_seconds{job=\"$service\", namespace=\"$namespace\", cluster=\"$cluster\"})",
+          "legendFormat": "Age",
+          "refId": "A"
+        }
+      ],
+      "title": "Last Deploy Age",
+      "type": "stat"
+    },
+    {
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 5
+      },
+      "id": 100,
+      "title": "nginx Metrics (stub_status)",
+      "type": "row"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "unit": "reqps"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 6,
+        "w": 8,
+        "x": 0,
+        "y": 6
+      },
+      "id": 1,
+      "options": {
+        "tooltip": {
+          "mode": "single"
+        }
+      },
+      "targets": [
+        {
+          "expr": "rate(nginx_http_requests_total{job=\"$service\", cluster=\"$cluster\"}[2m])",
+          "legendFormat": "req/s",
+          "refId": "A"
+        }
+      ],
+      "title": "Request Rate",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 6,
+        "w": 8,
+        "x": 8,
+        "y": 6
+      },
+      "id": 2,
+      "options": {
+        "tooltip": {
+          "mode": "multi"
+        }
+      },
+      "targets": [
+        {
+          "expr": "nginx_connections_active{job=\"$service\", cluster=\"$cluster\"}",
+          "legendFormat": "active",
+          "refId": "A"
+        },
+        {
+          "expr": "nginx_connections_waiting{job=\"$service\", cluster=\"$cluster\"}",
+          "legendFormat": "waiting",
+          "refId": "B"
+        },
+        {
+          "expr": "nginx_connections_reading{job=\"$service\", cluster=\"$cluster\"}",
+          "legendFormat": "reading",
+          "refId": "C"
+        },
+        {
+          "expr": "nginx_connections_writing{job=\"$service\", cluster=\"$cluster\"}",
+          "legendFormat": "writing",
+          "refId": "D"
+        }
+      ],
+      "title": "nginx Connections",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "color": {
+            "mode": "palette-classic"
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 6,
+        "w": 8,
+        "x": 16,
+        "y": 6
+      },
+      "id": 3,
+      "targets": [
+        {
+          "expr": "increase(kube_pod_container_restarts_total{container=\"nginx\", namespace=~\"$service-.*\", cluster=\"$cluster\"}[5m])",
+          "legendFormat": "{{pod}} restarts",
+          "refId": "A"
+        }
+      ],
+      "title": "Pod Restarts (5m increments)",
+      "type": "timeseries"
+    },
+    {
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 12
+      },
+      "id": 104,
+      "title": "Error Rate (from Loki nginx access logs)",
+      "type": "row"
+    },
+    {
+      "datasource": {
+        "type": "loki",
+        "uid": "${loki_datasource}"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "red"
+          },
+          "unit": "percentunit",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 0.01
+              },
+              {
+                "color": "red",
+                "value": 0.05
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 6,
+        "w": 8,
+        "x": 0,
+        "y": 13
+      },
+      "id": 11,
+      "options": {
+        "tooltip": {
+          "mode": "single"
+        }
+      },
+      "targets": [
+        {
+          "expr": "sum(rate({namespace=\"$namespace\", cluster=\"$cluster\", app_kubernetes_io_name=\"$service\"} | pattern `<_> \"<method> <_> <_>\" <status> <_>` | status >= 500 [2m])) / sum(rate({namespace=\"$namespace\", cluster=\"$cluster\", app_kubernetes_io_name=\"$service\"} [2m]))",
+          "legendFormat": "5xx error rate",
+          "refId": "A"
+        },
+        {
+          "expr": "sum(rate({namespace=\"$namespace\", cluster=\"$cluster\", app_kubernetes_io_name=\"$service\"} | pattern `<_> \"<method> <_> <_>\" <status> <_>` | status >= 400 | status < 500 [2m])) / sum(rate({namespace=\"$namespace\", cluster=\"$cluster\", app_kubernetes_io_name=\"$service\"} [2m]))",
+          "legendFormat": "4xx rate",
+          "refId": "B"
+        }
+      ],
+      "title": "Error Rate (4xx / 5xx) from nginx access logs",
+      "type": "timeseries",
+      "description": "Derived from nginx access logs via Loki. Shows No data if Loki is not scraping nginx access logs."
+    },
+    {
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 19
+      },
+      "id": 101,
+      "title": "System Resources",
+      "type": "row"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percentunit",
+          "color": {
+            "mode": "palette-classic"
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 6,
+        "w": 8,
+        "x": 0,
+        "y": 20
+      },
+      "id": 4,
+      "targets": [
+        {
+          "expr": "sum(rate(container_cpu_usage_seconds_total{namespace=\"$namespace\", cluster=\"$cluster\", pod=~\"$service.*\", container!=\"\"}[2m])) by (pod)",
+          "legendFormat": "{{pod}}",
+          "refId": "A"
+        }
+      ],
+      "title": "CPU Usage",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "bytes",
+          "color": {
+            "mode": "palette-classic"
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 6,
+        "w": 8,
+        "x": 8,
+        "y": 20
+      },
+      "id": 5,
+      "targets": [
+        {
+          "expr": "sum(container_memory_working_set_bytes{namespace=\"$namespace\", cluster=\"$cluster\", pod=~\"$service.*\", container!=\"\"}) by (pod)",
+          "legendFormat": "{{pod}}",
+          "refId": "A"
+        }
+      ],
+      "title": "Memory Usage",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "color": {
+            "mode": "palette-classic"
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 6,
+        "w": 8,
+        "x": 16,
+        "y": 20
+      },
+      "id": 6,
+      "targets": [
+        {
+          "expr": "count(kube_pod_info{namespace=\"$namespace\", cluster=\"$cluster\", pod=~\"$service.*\"})",
+          "legendFormat": "pods",
+          "refId": "A"
+        }
+      ],
+      "title": "Pod Count",
+      "type": "timeseries"
+    },
+    {
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 26
+      },
+      "id": 103,
+      "title": "Logs",
+      "type": "row"
+    },
+    {
+      "datasource": {
+        "type": "loki",
+        "uid": "${loki_datasource}"
+      },
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 10,
+        "w": 24,
+        "x": 0,
+        "y": 27
+      },
+      "id": 10,
+      "options": {
+        "dedupStrategy": "none",
+        "enableLogDetails": true,
+        "prettifyLogMessage": false,
+        "showCommonLabels": false,
+        "showLabels": false,
+        "showTime": true,
+        "sortOrder": "Descending",
+        "wrapLogMessage": false
+      },
+      "targets": [
+        {
+          "expr": "{namespace=\"$namespace\", app_kubernetes_io_name=\"$service\", cluster=\"$cluster\"} |= \"\"",
+          "legendFormat": "",
+          "refId": "A",
+          "maxLines": 100
+        }
+      ],
+      "title": "nginx Access Logs (last 100 lines)",
+      "type": "logs"
+    }
+  ],
+  "refresh": "30s",
+  "schemaVersion": 37,
+  "tags": [
+    "mfe",
+    "nginx",
+    "monitoring",
+    "per-service"
+  ],
+  "templating": {
+    "list": [
+      {
+        "current": {},
+        "hide": 0,
+        "includeAll": false,
+        "name": "datasource",
+        "options": [],
+        "query": "prometheus",
+        "refresh": 1,
+        "type": "datasource",
+        "label": "Prometheus"
+      },
+      {
+        "current": {},
+        "hide": 0,
+        "includeAll": false,
+        "name": "loki_datasource",
+        "options": [],
+        "query": "loki",
+        "refresh": 1,
+        "type": "datasource",
+        "label": "Loki"
+      },
+      {
+        "current": {
+          "text": "",
+          "value": ""
+        },
+        "datasource": {
+          "type": "prometheus",
+          "uid": "${datasource}"
+        },
+        "definition": "label_values(up, cluster)",
+        "hide": 0,
+        "includeAll": false,
+        "name": "cluster",
+        "options": [],
+        "query": "label_values(up, cluster)",
+        "refresh": 2,
+        "sort": 1,
+        "type": "query",
+        "label": "Cluster"
+      },
+      {
+        "current": {
+          "text": "mfe-name-dev",
+          "value": "mfe-name-dev"
+        },
+        "datasource": {
+          "type": "prometheus",
+          "uid": "${datasource}"
+        },
+        "definition": "label_values(kube_namespace_labels{cluster=\"$cluster\"}, namespace)",
+        "hide": 0,
+        "includeAll": false,
+        "name": "namespace",
+        "options": [],
+        "query": "label_values(kube_namespace_labels{cluster=\"$cluster\"}, namespace)",
+        "refresh": 2,
+        "sort": 1,
+        "type": "query",
+        "label": "Namespace"
+      },
+      {
+        "current": {
+          "text": "mfe-name",
+          "value": "mfe-name"
+        },
+        "datasource": {
+          "type": "prometheus",
+          "uid": "${datasource}"
+        },
+        "definition": "label_values(nginx_up{namespace=\"$namespace\", cluster=\"$cluster\"}, job)",
+        "hide": 0,
+        "includeAll": false,
+        "name": "service",
+        "options": [],
+        "query": "label_values(nginx_up{namespace=\"$namespace\", cluster=\"$cluster\"}, job)",
+        "refresh": 2,
+        "sort": 1,
+        "type": "query",
+        "label": "MFE Service"
+      },
+      {
+        "current": {
+          "text": "dev",
+          "value": "dev"
+        },
+        "hide": 0,
+        "includeAll": false,
+        "name": "environment",
+        "options": [
+          {
+            "selected": true,
+            "text": "dev",
+            "value": "dev"
+          },
+          {
+            "selected": false,
+            "text": "staging",
+            "value": "staging"
+          },
+          {
+            "selected": false,
+            "text": "prod",
+            "value": "prod"
+          }
+        ],
+        "query": "dev,staging,prod",
+        "type": "custom",
+        "label": "Environment"
+      }
+    ]
+  },
+  "time": {
+    "from": "now-1h",
+    "to": "now"
+  },
+  "timepicker": {},
+  "timezone": "browser",
+  "title": "MFE Overview — $service",
+  "uid": "mfe-mfe-shell",
+  "version": 1
+}

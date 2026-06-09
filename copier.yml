@@ -1,0 +1,65 @@
+_min_copier_version: "9.0"
+_subdirectory: .
+
+# Copier-managed files (regenerated on template-sync — backup custom edits first):
+#   .github/workflows/main.yml, pr.yml, promote.yml, agent-run.yml,
+#   bootstrap-repo.yml, codeql.yml,
+#   k8s/base/service-monitor.yaml,
+#   k8s/monitoring/dashboards/grafana-dashboard.json,
+#   k8s/monitoring/dashboards/kustomization.yaml
+#
+# Files NOT managed (repo-specific, never overwritten):
+#   src/, k8s/base/deployment.yaml, k8s/base/service.yaml,
+#   k8s/base/ingress.yaml, k8s/base/kustomization.yaml,
+#   k8s/overlays/**/kustomization.yaml,
+#   k8s/overlays/**/external-secret.yaml,
+#   nginx.conf, Dockerfile, .env
+_skip_if_exists:
+  - k8s/base/deployment.yaml
+  - k8s/base/service.yaml
+  - k8s/base/ingress.yaml
+  - k8s/base/kustomization.yaml
+  - k8s/base/configmap.yaml
+  - k8s/base/network-policy.yaml
+  - k8s/base/namespace.yaml
+  - k8s/base/ghcr-pull-secret.yaml
+  - k8s/overlays/dev/kustomization.yaml
+  - k8s/overlays/staging/kustomization.yaml
+  - k8s/overlays/prod/kustomization.yaml
+  - k8s/overlays/dev/external-secret.yaml
+  - k8s/overlays/staging/external-secret.yaml
+  - k8s/overlays/prod/external-secret.yaml
+  - Dockerfile
+  - nginx.conf
+_exclude:
+  - README.md
+
+repo_name:
+  type: str
+  help: Repository name (e.g. mfe-shell)
+
+description:
+  type: str
+  help: Short description of the application (shown in Backstage and catalog)
+
+coverage_threshold:
+  type: int
+  default: 70
+  help: Minimum statement coverage percentage enforced in the PR quality gate
+
+node_version:
+  type: str
+  default: "22"
+  help: Node.js version used in CI quality and build steps
+
+managed_skills_source:
+  type: str
+  default: "private-sovereign-cloud/apps/_templates/shared-skills"
+  help: Source of platform-managed shared Copilot skills
+
+managed_skills:
+  type: yaml
+  default:
+    - repo-routing
+    - skills-sync
+  help: Platform-managed skill IDs

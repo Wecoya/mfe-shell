@@ -1,0 +1,26 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+# Target namespace: grafana on the management cluster
+# ArgoCD destination.namespace also sets this, but explicit here for local `kustomize build` runs.
+namespace: grafana
+
+# Generates a stable ConfigMap (no hash suffix) — stable names prevent Grafana sidecar
+# from briefly losing the dashboard during updates (it tracks by ConfigMap name, not content).
+configMapGenerator:
+  - name: mfe-shell-grafana-dashboard
+    files:
+      - mfe-shell-dashboard.json=grafana-dashboard.json
+    options:
+      # Disable hash suffix for stable ConfigMap names across updates
+      disableNameSuffixHash: true
+      labels:
+        grafana_dashboard: "1"        # Picked up by Grafana sidecar (searchNamespace: ALL)
+        app.kubernetes.io/name: mfe-shell
+        app.kubernetes.io/component: observability
+        app.kubernetes.io/part-of: private-sovereign-cloud
+        app.kubernetes.io/managed-by: argocd
+      annotations:
+        # Grafana sidecar uses this annotation to place the dashboard in a folder.
+        # Requires sidecar.dashboards.folderAnnotation: grafana_folder in Grafana Helm values.
+        grafana_folder: "Services"
