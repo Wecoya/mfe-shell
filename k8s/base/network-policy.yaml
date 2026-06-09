@@ -1,5 +1,5 @@
 ---
-# NetworkPolicy: MFE_NAME-ingress-allow
+# NetworkPolicy: mfe-shell-ingress-allow
 #
 # Default-deny all cross-namespace traffic. Allows only:
 #   Ingress: from Cilium Ingress controller (kube-system) on port 8080
@@ -9,9 +9,9 @@
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
-  name: MFE_NAME-ingress-allow
+  name: mfe-shell-ingress-allow
   labels:
-    app.kubernetes.io/name: MFE_NAME
+    app.kubernetes.io/name: mfe-shell
     app.kubernetes.io/component: network-policy
     app.kubernetes.io/part-of: wecoya-platform
     app.kubernetes.io/managed-by: argocd
@@ -20,7 +20,7 @@ metadata:
 spec:
   podSelector:
     matchLabels:
-      app.kubernetes.io/name: MFE_NAME
+      app.kubernetes.io/name: mfe-shell
   policyTypes:
     - Ingress
     - Egress

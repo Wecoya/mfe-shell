@@ -3,6 +3,6 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: MFE_NAME
+  name: mfe-shell
 spec:
   replicas: 2

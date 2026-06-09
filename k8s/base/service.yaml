@@ -1,14 +1,14 @@
 ---
-# Service: MFE_NAME
+# Service: mfe-shell
 #
 # ClusterIP service for the nginx pod on port 8080.
 # Referenced by the Ingress in each environment overlay.
 apiVersion: v1
 kind: Service
 metadata:
-  name: MFE_NAME
+  name: mfe-shell
   labels:
-    app.kubernetes.io/name: MFE_NAME
+    app.kubernetes.io/name: mfe-shell
     app.kubernetes.io/component: frontend
     app.kubernetes.io/part-of: wecoya-platform
     app.kubernetes.io/managed-by: argocd
@@ -17,7 +17,7 @@ metadata:
 spec:
   type: ClusterIP
   selector:
-    app.kubernetes.io/name: MFE_NAME
+    app.kubernetes.io/name: mfe-shell
   ports:
     - name: http
       port: 8080

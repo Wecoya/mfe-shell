@@ -2,19 +2,19 @@
 apiVersion: cert-manager.io/v1
 kind: Certificate
 metadata:
-  name: MFE_NAME-prod-tls
-  namespace: MFE_NAME-prod
+  name: mfe-shell-prod-tls
+  namespace: mfe-shell-prod
   labels:
-    app.kubernetes.io/name: MFE_NAME-prod-tls
+    app.kubernetes.io/name: mfe-shell-prod-tls
     app.kubernetes.io/component: certificate
     app.kubernetes.io/part-of: wecoya-platform
     app.kubernetes.io/managed-by: argocd
   annotations:
     argocd.argoproj.io/sync-wave: "20"
 spec:
-  secretName: MFE_NAME-prod-tls
+  secretName: mfe-shell-prod-tls
   dnsNames:
-    - MFE_NAME.app.wecoya.online
+    - shell.app.wecoya.online
   issuerRef:
     name: letsencrypt-prod-dns01-app
     kind: ClusterIssuer

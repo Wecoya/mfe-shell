@@ -2,7 +2,7 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: MFE_NAME-config
+  name: mfe-shell-config
 data:
   KEYCLOAK_URL: "https://id.plattform.wecoya.online"
   KEYCLOAK_REALM: "wecoya-staging"

@@ -1,31 +1,31 @@
 ---
 # Kustomize overlay: dev
 #
-# Deploys MFE_NAME to namespace MFE_NAME-dev on psc-app-cluster.
-# Domain: MFE_NAME-dev.app.wecoya.online
+# Deploys mfe-shell to namespace mfe-shell-dev on psc-app-cluster.
+# Domain: shell-dev.app.wecoya.online
 #
 # CI flow: merge to main → build.yml pushes image, updates newTag here →
-#   ArgoCD auto-syncs MFE_NAME-dev (~5 min propagation).
+#   ArgoCD auto-syncs mfe-shell-dev (~5 min propagation).
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 
-namespace: MFE_NAME-dev
+namespace: mfe-shell-dev
 
 resources:
   - ../../base
   - resource-quota.yaml
   - certificate.yaml
-  - patches/ingress.yaml
+  - patches/ingress.yaml   # standalone dev Ingress resource (NOT a patch file despite its path)
 
 images:
-  - name: ghcr.io/wecoya/MFE_NAME
+  - name: ghcr.io/wecoya/mfe-shell
     newTag: main   # CI rewrites this to the actual SHA on each merge
 
 patches:
   - path: patches/configmap.yaml
     target:
       kind: ConfigMap
-      name: MFE_NAME-config
+      name: mfe-shell-config
   # Override Ingress host to dev-specific subdomain.
   # DNS is managed explicitly via Crossplane HetznerDNSRecord in infra repo.
   # TLS uses the shared wildcard certificate for app.wecoya.online.
@@ -45,6 +45,6 @@ patches:
 
 labels:
   - pairs:
-      psc.wecoya.io/service: MFE_NAME
+      psc.wecoya.io/service: mfe-shell
       psc.wecoya.io/environment: dev
     includeSelectors: false

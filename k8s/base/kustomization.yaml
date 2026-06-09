@@ -1,5 +1,5 @@
 ---
-# Kustomize base: MFE_NAME
+# Kustomize base: mfe-shell
 #
 # Environment-agnostic resources for the MFE nginx deployment.
 # Each overlay (dev/staging/prod) adds:
