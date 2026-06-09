@@ -19,7 +19,7 @@ resources:
 images:
 - name: ghcr.io/wecoya/mfe-shell
   newName: ghcr.io/wecoya/mfe-shell
-  newTag: 6f6cccd
+  newTag: 07cfc8e
 
   # Override Ingress host to dev-specific subdomain.
   # DNS is managed explicitly via Crossplane HetznerDNSRecord in infra repo.
