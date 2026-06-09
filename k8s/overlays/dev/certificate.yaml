@@ -2,22 +2,20 @@
 # Certificate: mfe-shell-dev-tls
 #
 # TLS certificate for shell-dev.app.wecoya.online via Let's Encrypt DNS-01.
-# Note: the Ingress uses wildcard-app-wecoya-online-tls; this cert is provisioned
-# as a dedicated fallback and for future direct-cert migration.
-# Uses the App Cluster ClusterIssuer (letsencrypt-prod-dns01-app).
+# Provisioned in mfe-shell namespace so the Ingress can reference it.
 # Issuance: up to 5 min on first issue (DNS-01 propagation).
 apiVersion: cert-manager.io/v1
 kind: Certificate
 metadata:
   name: mfe-shell-dev-tls
-  namespace: mfe-shell-dev
+  namespace: mfe-shell
   labels:
     app.kubernetes.io/name: mfe-shell-dev-tls
     app.kubernetes.io/component: certificate
     app.kubernetes.io/part-of: wecoya-platform
     app.kubernetes.io/managed-by: argocd
   annotations:
-    argocd.argoproj.io/sync-wave: "20"
+    argocd.argoproj.io/sync-wave: "5"
 spec:
   secretName: mfe-shell-dev-tls
   dnsNames:
