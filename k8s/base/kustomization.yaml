@@ -17,3 +17,4 @@ resources:
   - service.yaml
   - configmap.yaml
   - network-policy.yaml
+  - service-monitor.yaml
