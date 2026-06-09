@@ -1,18 +1,27 @@
 ---
-# ServiceMonitor — tells Prometheus Operator which pods to scrape.
-# Label `release: prometheus` must match the Prometheus Operator's serviceMonitorSelector.
+# ServiceMonitor — Prometheus scraping for mfe-shell
+#
+# Enables automatic metrics collection by the Prometheus Agent running on the App Cluster.
+# Metrics are remote-written to the Management Cluster Prometheus and visible in Grafana.
+#
+# Label "release: prometheus" matches the serviceMonitorSelector configured in
+# infra/app-cluster/prometheus-agent-app-cluster.yaml.
+#
+# Prerequisites:
+#   - Deployment / Service exposes a port named "http"
+#   - App or sidecar exposes GET /metrics (nginx-prometheus-exporter or custom endpoint)
+#   - NetworkPolicy allows ingress from monitoring namespace (see network-policy.yaml)
 #
 apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
 metadata:
   name: mfe-shell
-  namespace: mfe-shell
   labels:
     app.kubernetes.io/name: mfe-shell
     app.kubernetes.io/component: observability
-    app.kubernetes.io/part-of: wecoya-platform
+    app.kubernetes.io/part-of: private-sovereign-cloud
     app.kubernetes.io/managed-by: argocd
-    release: prometheus
+    release: prometheus  # must match serviceMonitorSelector in Prometheus config
 spec:
   selector:
     matchLabels:
@@ -23,3 +32,5 @@ spec:
       path: /metrics
       interval: 30s
       scheme: http
+  namespaceSelector:
+    any: true

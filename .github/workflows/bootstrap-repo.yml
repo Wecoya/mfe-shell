@@ -1,0 +1,96 @@
+name: Bootstrap Repository (run once)
+# This workflow runs once after repository creation to configure:
+# - GitHub Advanced Security (GHAS)
+# - Branch protection rules with required status checks
+# It disables itself after successful configuration.
+
+on:
+  workflow_dispatch:
+    inputs:
+      trigger:
+        description: "Auto-triggered by Backstage scaffolder"
+        required: false
+        default: "manual"
+
+jobs:
+  configure-repo:
+    name: Configure GHAS & Branch Protection
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      security-events: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Enable GitHub Advanced Security
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh api \
+            --method PATCH \
+            /repos/${{ github.repository }} \
+            --field security_and_analysis='{"advanced_security":{"status":"enabled"},"secret_scanning":{"status":"enabled"},"secret_scanning_push_protection":{"status":"enabled"}}' \
+            && echo "✅ GHAS enabled" || echo "⚠️ GHAS enable failed (may need org-level license)"
+
+      - name: Disable CodeQL default setup (advanced workflow compatibility)
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          set +e
+          OUTPUT="$(gh api \
+            --method PATCH \
+            /repos/${{ github.repository }}/code-scanning/default-setup \
+            -f state=not-configured 2>&1)"
+          STATUS=$?
+          set -e
+
+          if [ "$STATUS" -ne 0 ]; then
+            echo "::error title=CodeQL bootstrap failed::Unable to disable CodeQL default setup. ${OUTPUT}"
+            {
+              echo "### CodeQL bootstrap failure"
+              echo "- Repository: \`${{ github.repository }}\`"
+              echo "- Error: \`${OUTPUT}\`"
+              echo "- Required permission: \`security-events: write\` on \`GITHUB_TOKEN\`"
+            } >> "$GITHUB_STEP_SUMMARY"
+            exit 1
+          fi
+
+          STATE="$(gh api /repos/${{ github.repository }}/code-scanning/default-setup --jq '.state' 2>/dev/null || echo unknown)"
+          echo "✅ CodeQL default setup state after bootstrap: ${STATE}"
+
+      - name: Configure branch protection on main
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh api \
+            --method PUT \
+            /repos/${{ github.repository }}/branches/main/protection \
+            --input - << 'EOF'
+          {
+            "required_status_checks": {
+              "strict": true,
+              "contexts": [
+                "quality / lint",
+                "quality / type-check",
+                "quality / unit-tests",
+                "security / codeql",
+                "security / trivy"
+              ]
+            },
+            "enforce_admins": false,
+            "required_pull_request_reviews": {
+              "required_approving_review_count": 1,
+              "dismiss_stale_reviews": false
+            },
+            "restrictions": null
+          }
+          EOF
+          echo "✅ Branch protection configured"
+
+      - name: Disable this bootstrap workflow
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh workflow disable "Bootstrap Repository (run once)" \
+            && echo "✅ Bootstrap workflow disabled" || true

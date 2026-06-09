@@ -1,9 +1,9 @@
 _src_path: gh:Wecoya/private-sovereign-cloud/apps/_templates/web-app
-_commit: d358ec5242a2cff0c61f4733ae2a8f6bf64cd51a
+_commit: 4477187b5b9ea5c511888a1d272c69c1070538e5
 repo_name: mfe-shell
 description: Vue 3 microfrontend shell host app — Module Federation entry point
 coverage_threshold: 70
-node_version: "22"
+node_version: '22'
 managed_skills_source: private-sovereign-cloud/apps/_templates/shared-skills
 managed_skills:
 - repo-routing
