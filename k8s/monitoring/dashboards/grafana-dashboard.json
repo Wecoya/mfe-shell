@@ -673,7 +673,7 @@
       },
       "targets": [
         {
-          "expr": "{namespace=\"mfe-shell\", cluster=\"$cluster\"} |= \"\"",
+          "expr": "{k8s_namespace_name=mfe-shell}",
           "legendFormat": "",
           "refId": "A",
           "maxLines": 100
