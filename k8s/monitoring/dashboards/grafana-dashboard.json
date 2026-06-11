@@ -28,7 +28,7 @@
           "uid": "${datasource}"
         },
         "enable": true,
-        "expr": "ci_deployment_timestamp_seconds{namespace=\"mfe-shell\", cluster=\"$cluster\"} > 0",
+        "expr": "ci_deployment_timestamp_seconds{namespace=\"$namespace\", cluster=\"$cluster\"} > 0",
         "hide": false,
         "iconColor": "green",
         "name": "Deployments",
@@ -42,7 +42,7 @@
           "uid": "${datasource}"
         },
         "enable": true,
-        "expr": "ci_deployment_failed_timestamp_seconds{namespace=\"mfe-shell\", cluster=\"$cluster\"} > 0",
+        "expr": "ci_deployment_failed_timestamp_seconds{namespace=\"$namespace\", cluster=\"$cluster\"} > 0",
         "hide": false,
         "iconColor": "red",
         "name": "Failed Deploys",
@@ -256,7 +256,7 @@
       },
       "targets": [
         {
-          "expr": "increase(kube_pod_container_restarts_total{container=\"nginx\", namespace=\"mfe-shell\", cluster=\"$cluster\"}[15m])",
+          "expr": "increase(kube_pod_container_restarts_total{container=\"nginx\", namespace=\"$namespace\", cluster=\"$cluster\"}[15m])",
           "legendFormat": "restarts",
           "refId": "A"
         }
@@ -318,7 +318,7 @@
       },
       "targets": [
         {
-          "expr": "time() - max(ci_deployment_timestamp_seconds{namespace=\"mfe-shell\", cluster=\"$cluster\"})",
+          "expr": "time() - max(ci_deployment_timestamp_seconds{namespace=\"$namespace\", cluster=\"$cluster\"})",
           "legendFormat": "Age",
           "refId": "A"
         }
@@ -448,7 +448,7 @@
       "id": 3,
       "targets": [
         {
-          "expr": "increase(kube_pod_container_restarts_total{container=\"nginx\", namespace=\"mfe-shell\", cluster=\"$cluster\"}[5m])",
+          "expr": "increase(kube_pod_container_restarts_total{container=\"nginx\", namespace=\"$namespace\", cluster=\"$cluster\"}[5m])",
           "legendFormat": "{{pod}} restarts",
           "refId": "A"
         }
@@ -514,12 +514,12 @@
       },
       "targets": [
         {
-          "expr": "sum(rate({namespace=\"mfe-shell\", cluster=\"$cluster\"} | pattern `<_> \"<method> <_> <_>\" <status> <_>` | status >= 500 [2m])) / sum(rate({namespace=\"mfe-shell\", cluster=\"$cluster\"} [2m]))",
+          "expr": "sum(rate({namespace=\"$namespace\", cluster=\"$cluster\"} | pattern `<_> \"<method> <_> <_>\" <status> <_>` | status >= 500 [2m])) / sum(rate({namespace=\"$namespace\", cluster=\"$cluster\"} [2m]))",
           "legendFormat": "5xx error rate",
           "refId": "A"
         },
         {
-          "expr": "sum(rate({namespace=\"mfe-shell\", cluster=\"$cluster\"} | pattern `<_> \"<method> <_> <_>\" <status> <_>` | status >= 400 | status < 500 [2m])) / sum(rate({namespace=\"mfe-shell\", cluster=\"$cluster\"} [2m]))",
+          "expr": "sum(rate({namespace=\"$namespace\", cluster=\"$cluster\"} | pattern `<_> \"<method> <_> <_>\" <status> <_>` | status >= 400 | status < 500 [2m])) / sum(rate({namespace=\"$namespace\", cluster=\"$cluster\"} [2m]))",
           "legendFormat": "4xx rate",
           "refId": "B"
         }
@@ -563,7 +563,7 @@
       "id": 4,
       "targets": [
         {
-          "expr": "sum(rate(container_cpu_usage_seconds_total{namespace=\"mfe-shell\", cluster=\"$cluster\", container!=\"\"}[2m])) by (pod)",
+          "expr": "sum(rate(container_cpu_usage_seconds_total{namespace=\"$namespace\", cluster=\"$cluster\", container!=\"\"}[2m])) by (pod)",
           "legendFormat": "{{pod}}",
           "refId": "A"
         }
@@ -594,7 +594,7 @@
       "id": 5,
       "targets": [
         {
-          "expr": "sum(container_memory_working_set_bytes{namespace=\"mfe-shell\", cluster=\"$cluster\", container!=\"\"}) by (pod)",
+          "expr": "sum(container_memory_working_set_bytes{namespace=\"$namespace\", cluster=\"$cluster\", container!=\"\"}) by (pod)",
           "legendFormat": "{{pod}}",
           "refId": "A"
         }
@@ -625,7 +625,7 @@
       "id": 6,
       "targets": [
         {
-          "expr": "count(kube_pod_info{namespace=\"mfe-shell\", cluster=\"$cluster\"})",
+          "expr": "count(kube_pod_info{namespace=\"$namespace\", cluster=\"$cluster\"})",
           "legendFormat": "pods",
           "refId": "A"
         }
@@ -673,7 +673,7 @@
       },
       "targets": [
         {
-          "expr": "{k8s_namespace_name=mfe-shell}",
+          "expr": "{k8s_namespace_name=\"$namespace\"}",
           "legendFormat": "",
           "refId": "A",
           "maxLines": 100
@@ -681,6 +681,86 @@
       ],
       "title": "nginx Access Logs (last 100 lines)",
       "type": "logs"
+    },
+    {
+      "collapsed": false,
+      "gridPos": {"h": 1, "w": 24, "x": 0, "y": 33},
+      "id": 104,
+      "title": "Container Health",
+      "type": "row"
+    },
+    {
+      "datasource": {"type": "prometheus", "uid": "${datasource}"},
+      "description": "Container restarts in the last hour. Red = crash loop.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {"mode": "thresholds"},
+          "thresholds": {"mode": "absolute", "steps": [
+            {"color": "green", "value": null},
+            {"color": "yellow", "value": 1},
+            {"color": "red", "value": 3}
+          ]},
+          "unit": "short", "mappings": []
+        },
+        "overrides": []
+      },
+      "gridPos": {"h": 4, "w": 6, "x": 0, "y": 34},
+      "id": 20,
+      "options": {
+        "colorMode": "background", "graphMode": "none",
+        "justifyMode": "center", "orientation": "auto",
+        "reduceOptions": {"calcs": ["sum"], "fields": "", "values": false},
+        "textMode": "auto"
+      },
+      "targets": [{
+        "expr": "sum(increase(kube_pod_container_status_restarts_total{namespace=\"$namespace\", cluster=\"$cluster\", container!~\"queue-proxy|istio-proxy\"}[1h]))",
+        "legendFormat": "Restarts (1h)", "refId": "A"
+      }],
+      "title": "Container Restarts (1h)",
+      "type": "stat"
+    },
+    {
+      "datasource": {"type": "prometheus", "uid": "${datasource}"},
+      "description": "Why the last container terminated: Error = crash, OOMKilled = memory limit.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {"mode": "thresholds"},
+          "thresholds": {"mode": "absolute", "steps": [{"color": "blue", "value": null}]},
+          "mappings": [{"options": {"Completed": {"color": "green", "index": 0}, "Error": {"color": "red", "index": 1}, "OOMKilled": {"color": "orange", "index": 2}}, "type": "value"}]
+        },
+        "overrides": []
+      },
+      "gridPos": {"h": 4, "w": 6, "x": 6, "y": 34},
+      "id": 21,
+      "options": {
+        "colorMode": "background", "graphMode": "none",
+        "justifyMode": "center", "orientation": "auto",
+        "reduceOptions": {"calcs": ["lastNotNull"], "fields": "/__name__/", "values": false},
+        "textMode": "name"
+      },
+      "targets": [{
+        "expr": "kube_pod_container_status_last_terminated_reason{namespace=\"$namespace\", cluster=\"$cluster\", container!~\"queue-proxy|istio-proxy\"} == 1",
+        "legendFormat": "", "refId": "A"
+      }],
+      "title": "Last Exit Reason",
+      "type": "stat"
+    },
+    {
+      "datasource": {"type": "prometheus", "uid": "${datasource}"},
+      "description": "Restart rate over time. Spikes indicate crash loops.",
+      "fieldConfig": {
+        "defaults": {"color": {"fixedColor": "red", "mode": "fixed"}, "unit": "short"},
+        "overrides": []
+      },
+      "gridPos": {"h": 4, "w": 12, "x": 12, "y": 34},
+      "id": 22,
+      "options": {"tooltip": {"mode": "single"}},
+      "targets": [{
+        "expr": "increase(kube_pod_container_status_restarts_total{namespace=\"$namespace\", cluster=\"$cluster\", container!~\"queue-proxy|istio-proxy\"}[5m])",
+        "legendFormat": "", "refId": "A"
+      }],
+      "title": "Restart Events (5m window)",
+      "type": "timeseries"
     }
   ],
   "refresh": "30s",
@@ -737,6 +817,27 @@
       },
       {
         "current": {
+          "selected": true,
+          "text": "mfe-shell-prod",
+          "value": "mfe-shell-prod"
+        },
+        "datasource": {
+          "type": "prometheus",
+          "uid": "${datasource}"
+        },
+        "definition": "label_values(kube_pod_info{cluster=\"$cluster\"}, namespace)",
+        "hide": 0,
+        "includeAll": false,
+        "name": "namespace",
+        "options": [],
+        "query": "label_values(kube_pod_info{cluster=\"$cluster\"}, namespace)",
+        "refresh": 2,
+        "sort": 1,
+        "type": "query",
+        "label": "Namespace"
+      },
+      {
+        "current": {
           "text": "dev",
           "value": "dev"
         },
@@ -774,5 +875,5 @@
   "timezone": "browser",
   "title": "MFE Overview \u2014 $service",
   "uid": "mfe-mfe-shell",
-  "version": 1
+  "version": 3
 }
