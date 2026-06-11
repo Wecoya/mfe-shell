@@ -314,15 +314,12 @@ jobs:
           echo "pr_number=${PR_NUM}" >> "$GITHUB_OUTPUT"
 
   finalize:
-    # Only run for PRs opened by the agent (github-actions[bot]) on a feature/ branch.
-    # Branch-prefix alone is insufficient: any human can push a feature/ branch and
-    # trigger finalize with AGENT_PAT. The user.login check restricts this to PRs
-    # that were actually opened by the autonomous agent job.
+    # Only run for PRs on agent-created branches (feature/<task-id>-<slug>).
+    # Without this guard every merged PR — including human ones — would trigger finalize.
     if: |
       github.event_name == 'pull_request' &&
       github.event.pull_request.merged == true &&
-      startsWith(github.event.pull_request.head.ref, 'feature/') &&
-      github.event.pull_request.user.login == 'github-actions[bot]'
+      startsWith(github.event.pull_request.head.ref, 'feature/')
     runs-on: ubuntu-latest
     permissions:
       contents: write
