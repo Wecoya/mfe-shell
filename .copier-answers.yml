@@ -1,5 +1,5 @@
 _src_path: gh:Wecoya/private-sovereign-cloud/apps/_templates/web-app
-_commit: bd1a9f7ef34da28aa0570a2c9f562bb91b3d09ea
+_commit: 166bcacbc14acd04bb618d82e62da60f888c9ea3
 repo_name: mfe-shell
 description: Vue 3 microfrontend shell host app — Module Federation entry point
 coverage_threshold: 70

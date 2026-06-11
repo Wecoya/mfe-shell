@@ -32,5 +32,12 @@ spec:
       path: /metrics
       interval: 30s
       scheme: http
+    - targetPort: 9090
+      path: /metrics
+      interval: 30s
+      scheme: http
+      relabelings:
+        - targetLabel: job
+          replacement: "mfe-shell-queue-proxy"
   namespaceSelector:
     any: true
