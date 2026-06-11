@@ -49,6 +49,17 @@
         "step": "60s",
         "titleFormat": "Deploy Failed",
         "textFormat": ""
+      },
+      {
+        "datasource": {"type": "prometheus", "uid": "${datasource}"},
+        "enable": true,
+        "expr": "increase(kube_pod_container_status_restarts_total{namespace=\"$namespace\", cluster=\"$cluster\", container!~\"queue-proxy|istio-proxy\"}[2m]) > 0",
+        "hide": false,
+        "iconColor": "red",
+        "name": "Container Restart",
+        "step": "60s",
+        "titleFormat": "Restart",
+        "textFormat": ""
       }
     ]
   },
