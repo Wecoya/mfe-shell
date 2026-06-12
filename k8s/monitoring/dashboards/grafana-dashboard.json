@@ -28,7 +28,7 @@
           "uid": "${datasource}"
         },
         "enable": true,
-        "expr": "ci_deployment_timestamp_seconds{namespace=\"$namespace\", cluster=\"$cluster\"} > 0",
+        "expr": "changes(ci_deployment_timestamp_seconds{env=\"$environment\"}[5m]) > 0",
         "hide": false,
         "iconColor": "green",
         "name": "Deployments",
@@ -42,7 +42,7 @@
           "uid": "${datasource}"
         },
         "enable": true,
-        "expr": "ci_deployment_failed_timestamp_seconds{namespace=\"$namespace\", cluster=\"$cluster\"} > 0",
+        "expr": "changes(ci_deployment_failed_timestamp_seconds{env=\"$environment\"}[5m]) > 0 and ci_deployment_failed_timestamp_seconds{env=\"$environment\"} > 0",
         "hide": false,
         "iconColor": "red",
         "name": "Failed Deploys",
@@ -329,7 +329,7 @@
       },
       "targets": [
         {
-          "expr": "time() - max(ci_deployment_timestamp_seconds{namespace=\"$namespace\", cluster=\"$cluster\"})",
+          "expr": "time() - max(ci_deployment_timestamp_seconds{env=\"$environment\"})",
           "legendFormat": "Age",
           "refId": "A"
         }
