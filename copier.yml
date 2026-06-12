@@ -31,6 +31,13 @@ _skip_if_exists:
   - k8s/overlays/prod/external-secret.yaml
   - Dockerfile
   - nginx.conf
+  # ── Application code (NEVER overwrite on sync) ───────────────────────────
+  - src/**
+  - index.html
+  - package.json
+  - .env.example
+  - trivy.yaml
+  - .trivyignore
 _exclude:
   - README.md
 
