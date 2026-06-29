@@ -12,6 +12,9 @@ metadata:
     psc.wecoya.io/template: "vue-mfe"
     psc.wecoya.io/skills-managed: "true"
     backstage.io/badge-url: "https://grafana.wecoya.internal/d/platform-ci-health?var-repo=Wecoya/mfe-shell"
+    grafana/dashboard-selector: "mfe-mfe-shell"
+    grafana/tag-selector: "mfe"
+    grafana.com/dashboard-overview: "https://monitoring.plattform.wecoya.online/d/mfe-mfe-shell/mfe-overview?var-cluster=psc-app-01&var-namespace=All"
   tags:
     - typescript
     - vue
@@ -20,6 +23,9 @@ metadata:
     - url: "https://github.com/Wecoya/mfe-shell"
       title: "GitHub Repository"
       icon: github
+    - url: "https://monitoring.plattform.wecoya.online/d/mfe-mfe-shell/mfe-overview?var-cluster=psc-app-01&var-namespace=All"
+      title: "App Dashboard"
+      icon: dashboard
 spec:
   type: website
   lifecycle: production
