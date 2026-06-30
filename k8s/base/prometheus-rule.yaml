@@ -1,54 +1,118 @@
 ---
-# PrometheusRule — alerting rules evaluated by Management Cluster Prometheus.
-# NOTE: The app cluster runs Prometheus in agent mode (no TSDB). These rules must be
-# deployed to the Management Cluster to fire.
-# See: https://github.com/Wecoya/private-sovereign-cloud/blob/main/docs/how-to/monitoring-per-service.md
+# PrometheusRule — alerting rules for mfe-shell
 #
-# Alert severity by environment (controlled via Kustomize patches):
-#   dev:     warning  (default)
-#   staging: ServiceDown → critical (no PagerDuty)
-#   prod:    both → critical + alertmanager_route: pagerduty
+# IMPORTANT — Deployment target:
+#   These rules must be evaluated by a Prometheus with access to the TSDB data.
+#   The App Cluster runs Prometheus in Agent mode (remote-write only, no local TSDB).
+#   Therefore this rule MUST be deployed to the Management Cluster Prometheus, which
+#   receives all app-cluster metrics via remote-write.
+#
+#   The template is included here so it lives alongside the service manifests in Git.
+#   Filter by external label: {cluster="psc-app-01"} to scope rules to app-cluster metrics.
+#
+# Metric source: nginx-prometheus-exporter sidecar scraping nginx stub_status.
+#   Available metrics: nginx_up, nginx_http_requests_total, nginx_connections_active/reading/writing/waiting
+#   Note: stub_status does NOT provide per-status-code or latency histograms.
+#   For 5xx/latency alerting, add Loki-based recording rules from nginx access logs.
+#
+# Base severity: warning (for dev/staging).
+# Overlay patches (k8s/overlays/prod/patches/prometheus-rule.yaml) upgrade to critical.
 #
 apiVersion: monitoring.coreos.com/v1
 kind: PrometheusRule
 metadata:
   name: mfe-shell-alerts
-  namespace: mfe-shell
   labels:
     app.kubernetes.io/name: mfe-shell
     app.kubernetes.io/component: observability
-    app.kubernetes.io/part-of: wecoya-platform
+    app.kubernetes.io/part-of: private-sovereign-cloud
     app.kubernetes.io/managed-by: argocd
     release: prometheus
 spec:
   groups:
-    - name: mfe-shell.errors
-      rules:
-        - alert: ServiceHighErrorRate
-          expr: |
-            rate(http_requests_total{service="mfe-shell", status=~"5..", cluster="psc-app-01"}[5m])
-            /
-            rate(http_requests_total{service="mfe-shell", cluster="psc-app-01"}[5m])
-            > 0.05
-          for: 2m
-          labels:
-            severity: warning
-            service: mfe-shell
-          annotations:
-            summary: "mfe-shell HTTP error rate > 5%"
-            description: "Service mfe-shell in {{ $labels.namespace }} has a 5xx error rate of {{ $value | humanizePercentage }} over the last 5 minutes."
-            runbook: "https://wiki.wecoya.online/runbooks/service-high-error-rate"
-
     - name: mfe-shell.availability
       rules:
-        - alert: ServiceDown
+        - alert: MFEDown
           expr: |
-            up{job="mfe-shell", cluster="psc-app-01"} == 0
+            nginx_up{job="mfe-shell", cluster="psc-app-01"} == 0
           for: 1m
           labels:
             severity: warning
             service: mfe-shell
+            component: microfrontend
           annotations:
-            summary: "mfe-shell is down"
-            description: "Prometheus cannot scrape mfe-shell in {{ $labels.namespace }}. The service may be crashed or unscheduled."
+            summary: "{{ $labels.service }} nginx is down"
+            description: "Prometheus cannot scrape mfe-shell in {{ $labels.namespace }}. The pod may be crashed or unscheduled."
             runbook: "https://wiki.wecoya.online/runbooks/service-down"
+
+        - alert: MFEPodRestarting
+          expr: |
+            increase(kube_pod_container_restarts_total{
+              container="nginx",
+              namespace=~"mfe-shell-.*",
+              cluster="psc-app-01"
+            }[15m]) > 2
+          # `for: 5m` prevents false positives during normal rolling deployments,
+          # which cause a single pod restart that resolves within minutes.
+          for: 5m
+          labels:
+            severity: warning
+            service: mfe-shell
+            component: microfrontend
+          annotations:
+            summary: "{{ $labels.service }} pod is restarting repeatedly"
+            description: "Container nginx in pod {{ $labels.pod }} has restarted more than 2 times in 15 minutes."
+            runbook: "https://wiki.wecoya.online/runbooks/pod-crash-loop"
+
+        - alert: MFEExporterRestarting
+          expr: |
+            increase(kube_pod_container_restarts_total{
+              container="nginx-prometheus-exporter",
+              namespace=~"mfe-shell-.*",
+              cluster="psc-app-01"
+            }[15m]) > 2
+          for: 5m
+          labels:
+            severity: warning
+            service: mfe-shell
+            component: microfrontend
+          annotations:
+            summary: "{{ $labels.service }} metrics exporter is restarting"
+            description: "Container nginx-prometheus-exporter in pod {{ $labels.pod }} has restarted more than 2 times in 15 minutes. Prometheus metrics collection may be interrupted."
+            runbook: "https://wiki.wecoya.online/runbooks/pod-crash-loop"
+
+    - name: mfe-shell.load
+      rules:
+        - alert: MFEHighConnectionLoad
+          expr: |
+            nginx_connections_active{job="mfe-shell", cluster="psc-app-01"} > 500
+          for: 5m
+          labels:
+            severity: warning
+            service: mfe-shell
+            component: microfrontend
+          annotations:
+            summary: "{{ $labels.service }} nginx active connections high"
+            description: "MFE mfe-shell has {{ $value }} active nginx connections (threshold: 500). Possible latency or backpressure."
+            runbook: "https://wiki.wecoya.online/runbooks/high-connection-load"
+
+        - alert: MFERequestRateDrop
+          expr: |
+            (
+              rate(nginx_http_requests_total{job="mfe-shell", cluster="psc-app-01"}[5m])
+              /
+              rate(nginx_http_requests_total{job="mfe-shell", cluster="psc-app-01"}[30m] offset 5m)
+            ) < 0.1
+            and
+            # Guard: only fire for services with meaningful baseline traffic (>0.01 req/s ≈ 1 req/min).
+            # Lowered from 0.1 to catch low-traffic staging/prod MFEs.
+            rate(nginx_http_requests_total{job="mfe-shell", cluster="psc-app-01"}[30m] offset 5m) > 0.01
+          for: 2m
+          labels:
+            severity: warning
+            service: mfe-shell
+            component: microfrontend
+          annotations:
+            summary: "{{ $labels.service }} request rate dropped >90%"
+            description: "MFE mfe-shell request rate dropped significantly — possible deployment issue or upstream failure."
+            runbook: "https://wiki.wecoya.online/runbooks/request-rate-drop"

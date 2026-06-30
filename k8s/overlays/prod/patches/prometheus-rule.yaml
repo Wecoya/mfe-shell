@@ -1,41 +1,67 @@
 ---
-# Prod patch — upgrade both alerts to critical + PagerDuty routing.
+# Patch: upgrade PrometheusRule alert severity to critical in production.
+# Applied on top of k8s/base/prometheus-rule.yaml by the prod overlay kustomization.
 #
+# Strategic merge patch — each rule block must match by alert name.
 apiVersion: monitoring.coreos.com/v1
 kind: PrometheusRule
 metadata:
   name: mfe-shell-alerts
 spec:
   groups:
-    - name: mfe-shell.errors
-      rules:
-        - alert: ServiceHighErrorRate
-          expr: |
-            rate(http_requests_total{service="mfe-shell", status=~"5..", cluster="psc-app-01"}[5m])
-            /
-            rate(http_requests_total{service="mfe-shell", cluster="psc-app-01"}[5m])
-            > 0.05
-          for: 2m
-          labels:
-            severity: critical
-            alertmanager_route: pagerduty
-            service: mfe-shell
-          annotations:
-            summary: "mfe-shell HTTP error rate > 5%"
-            description: "Service mfe-shell in {{ $labels.namespace }} has a 5xx error rate of {{ $value | humanizePercentage }} over the last 5 minutes."
-            runbook: "https://wiki.wecoya.online/runbooks/service-high-error-rate"
-
     - name: mfe-shell.availability
       rules:
-        - alert: ServiceDown
-          expr: |
-            up{job="mfe-shell", cluster="psc-app-01"} == 0
+        - alert: MFEDown
+          expr: nginx_up{job="mfe-shell", cluster="psc-app-01"} == 0
           for: 1m
           labels:
             severity: critical
-            alertmanager_route: pagerduty
             service: mfe-shell
-          annotations:
-            summary: "mfe-shell is down"
-            description: "Prometheus cannot scrape mfe-shell in {{ $labels.namespace }}. The service may be crashed or unscheduled."
-            runbook: "https://wiki.wecoya.online/runbooks/service-down"
+            component: microfrontend
+        - alert: MFEPodRestarting
+          expr: |
+            increase(kube_pod_container_restarts_total{
+              container="nginx",
+              namespace=~"mfe-shell-.*",
+              cluster="psc-app-01"
+            }[15m]) > 2
+          for: 5m
+          labels:
+            severity: critical
+            service: mfe-shell
+            component: microfrontend
+        - alert: MFEExporterRestarting
+          expr: |
+            increase(kube_pod_container_restarts_total{
+              container="nginx-prometheus-exporter",
+              namespace=~"mfe-shell-.*",
+              cluster="psc-app-01"
+            }[15m]) > 2
+          for: 5m
+          labels:
+            severity: critical
+            service: mfe-shell
+            component: microfrontend
+    - name: mfe-shell.load
+      rules:
+        - alert: MFEHighConnectionLoad
+          expr: nginx_connections_active{job="mfe-shell", cluster="psc-app-01"} > 500
+          for: 5m
+          labels:
+            severity: critical
+            service: mfe-shell
+            component: microfrontend
+        - alert: MFERequestRateDrop
+          expr: |
+            (
+              rate(nginx_http_requests_total{job="mfe-shell", cluster="psc-app-01"}[5m])
+              /
+              rate(nginx_http_requests_total{job="mfe-shell", cluster="psc-app-01"}[30m] offset 5m)
+            ) < 0.1
+            and
+            rate(nginx_http_requests_total{job="mfe-shell", cluster="psc-app-01"}[30m] offset 5m) > 0.01
+          for: 2m
+          labels:
+            severity: critical
+            service: mfe-shell
+            component: microfrontend

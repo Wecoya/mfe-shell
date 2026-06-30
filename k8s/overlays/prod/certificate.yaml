@@ -14,7 +14,7 @@ metadata:
 spec:
   secretName: mfe-shell-prod-tls
   dnsNames:
-    - shell.app.wecoya.online
+    - mfe-shell.app.wecoya.online
   issuerRef:
     name: letsencrypt-prod-dns01-app
     kind: ClusterIssuer

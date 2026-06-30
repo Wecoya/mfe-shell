@@ -2,7 +2,7 @@
 # Kustomize overlay: prod
 #
 # Deploys mfe-shell to namespace mfe-shell-prod on psc-app-cluster.
-# Domain: shell.app.wecoya.online (no env suffix — production is canonical)
+# Domain: mfe-shell.app.wecoya.online (no env suffix — production is canonical)
 # Image tag: updated via promote.yml with GitHub Environment approval gate.
 # Replicas: 2 (no cold starts in production).
 apiVersion: kustomize.config.k8s.io/v1beta1
@@ -13,7 +13,7 @@ namespace: mfe-shell-prod
 resources:
   - ../../base
   - certificate.yaml
-  - patches/ingress.yaml   # standalone prod Ingress resource (NOT a patch file despite its path)
+  - patches/ingress.yaml
 
 images:
   - name: ghcr.io/wecoya/mfe-shell
@@ -28,21 +28,10 @@ patches:
     target:
       kind: ConfigMap
       name: mfe-shell-config
-  - target:
-      group: monitoring.coreos.com
-      version: v1
+  - path: patches/prometheus-rule.yaml
+    target:
       kind: PrometheusRule
       name: mfe-shell-alerts
-    path: patches/prometheus-rule.yaml
-
-  # Use the cluster-wide wildcard certificate already provisioned for app.wecoya.online.
-  - target:
-      kind: Ingress
-      name: mfe-shell
-    patch: |
-      - op: replace
-        path: /spec/tls/0/secretName
-        value: wildcard-app-wecoya-online-tls
 
 labels:
   - pairs:

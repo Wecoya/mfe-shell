@@ -1,8 +1,10 @@
 ---
 # Service: mfe-shell
 #
-# ClusterIP service for the nginx pod on port 8080.
-# Referenced by the Ingress in each environment overlay.
+# ClusterIP service for the nginx pod.
+# Port 8080 (http)    — referenced by Ingress in each environment overlay.
+# Port 9113 (metrics) — referenced by ServiceMonitor for Prometheus scraping via
+#                       the nginx-prometheus-exporter sidecar.
 apiVersion: v1
 kind: Service
 metadata:
@@ -22,4 +24,8 @@ spec:
     - name: http
       port: 8080
       targetPort: http
+      protocol: TCP
+    - name: metrics
+      port: 9113
+      targetPort: metrics
       protocol: TCP
