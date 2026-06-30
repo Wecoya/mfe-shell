@@ -2,7 +2,7 @@
 # Kustomize overlay: staging
 #
 # Deploys mfe-shell to namespace mfe-shell-staging on psc-app-cluster.
-# Domain: shell-staging.app.wecoya.online
+# Domain: mfe-shell-staging.app.wecoya.online
 # Image tag: updated via promote.yml (manual trigger, no auto-sync).
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
@@ -12,7 +12,7 @@ namespace: mfe-shell-staging
 resources:
   - ../../base
   - certificate.yaml
-  - patches/ingress.yaml   # standalone staging Ingress resource (NOT a patch file despite its path)
+  - patches/ingress.yaml
 
 images:
   - name: ghcr.io/wecoya/mfe-shell
@@ -23,29 +23,6 @@ patches:
     target:
       kind: ConfigMap
       name: mfe-shell-config
-
-  - target:
-      group: monitoring.coreos.com
-      version: v1
-      kind: PrometheusRule
-      name: mfe-shell-alerts
-    path: patches/prometheus-rule.yaml
-
-  # Override Ingress host to staging-specific subdomain.
-  # DNS record shell-staging.app.wecoya.online is managed explicitly via Crossplane.
-  - target:
-      kind: Ingress
-      name: mfe-shell
-    patch: |
-      - op: replace
-        path: /spec/tls/0/hosts/0
-        value: shell-staging.app.wecoya.online
-      - op: replace
-        path: /spec/tls/0/secretName
-        value: wildcard-app-wecoya-online-tls
-      - op: replace
-        path: /spec/rules/0/host
-        value: shell-staging.app.wecoya.online
 
 labels:
   - pairs:

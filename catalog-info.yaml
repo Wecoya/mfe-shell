@@ -2,7 +2,7 @@ apiVersion: backstage.io/v1alpha1
 kind: Component
 metadata:
   name: mfe-shell
-  description: "A @wecoya Vue 3 Microfrontend"
+  description: "Vue 3 microfrontend shell host app — Module Federation entry point"
   annotations:
     github.com/project-slug: "Wecoya/mfe-shell"
     backstage.io/techdocs-ref: "dir:."
@@ -11,7 +11,10 @@ metadata:
     psc.wecoya.io/component-type: "microfrontend"
     psc.wecoya.io/template: "vue-mfe"
     psc.wecoya.io/skills-managed: "true"
-    backstage.io/badge-url: "https://grafana.wecoya.internal/d/platform-ci-health?var-repo=Wecoya/mfe-shell"
+    argocd/app-name: "mfe-shell-dev"
+    argocd/app-namespace: argocd
+    backstage.io/kubernetes-id: mfe-shell
+    backstage.io/badge-url: "https://monitoring.plattform.wecoya.online/d/platform-ci-health/platform-ci-health?var-repo=Wecoya/mfe-shell"
     grafana/dashboard-selector: "mfe-mfe-shell"
     grafana/tag-selector: "mfe"
     grafana.com/dashboard-overview: "https://monitoring.plattform.wecoya.online/d/mfe-mfe-shell/mfe-overview?var-cluster=psc-app-01&var-namespace=All"
@@ -19,6 +22,7 @@ metadata:
     - typescript
     - vue
     - microfrontend
+    - platform
   links:
     - url: "https://github.com/Wecoya/mfe-shell"
       title: "GitHub Repository"
@@ -26,8 +30,19 @@ metadata:
     - url: "https://monitoring.plattform.wecoya.online/d/mfe-mfe-shell/mfe-overview?var-cluster=psc-app-01&var-namespace=All"
       title: "App Dashboard"
       icon: dashboard
+    - url: "https://monitoring.plattform.wecoya.online/d/platform-ci-health/platform-ci-health?var-repo=Wecoya%2Fmfe-shell&var-template=vue-mfe&var-branch=main&var-environment=dev"
+      title: "CI Health"
+      icon: dashboard
 spec:
   type: website
   lifecycle: production
   owner: "group:wecoya/platform-team"
-  system: platform-infrastructure
+  system: platform-system
+  providesApis: []
+  # Add the backend APIs this MFE calls, e.g.:
+  # consumesApis:
+  #   - component:default/platform-service-api
+  consumesApis: []
+  # Add backend services this MFE depends on, e.g.:
+  # dependsOnComponents:
+  #   - component:default/platform-service

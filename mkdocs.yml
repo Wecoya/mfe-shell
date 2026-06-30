@@ -1,0 +1,11 @@
+site_name: "mfe-shell"
+site_description: "Vue 3 microfrontend shell host app — Module Federation entry point"
+docs_dir: docs
+theme:
+  name: material
+plugins:
+  - techdocs-core
+nav:
+  - Overview: index.md
+  - Architecture: ARCHITECTURE.md
+  - Development: development.md

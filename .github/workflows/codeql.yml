@@ -29,19 +29,17 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5  # actions/checkout@v4.3.1
 
       - name: Detect CodeQL default setup state
         id: default_setup
-        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
-          API_URL="https://api.github.com/repos/${{ github.repository }}/code-scanning/default-setup"
-          RESPONSE="$(curl -sS -H "Authorization: Bearer ${{ github.token }}" -H "Accept: application/vnd.github+json" "$API_URL" || true)"
-          STATE="$(printf '%s' "$RESPONSE" | tr -d '\n' | sed -n 's/.*"state"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p')"
-          if [ -z "$STATE" ]; then
-            STATE="unknown"
-          fi
+          STATE="$(gh api \
+            /repos/${{ github.repository }}/code-scanning/default-setup \
+            --jq '.state' 2>/dev/null || echo 'unknown')"
           if [ "$STATE" = "configured" ]; then
             echo "enabled=true" >> "$GITHUB_OUTPUT"
             echo "Default setup is enabled; skipping advanced CodeQL to avoid SARIF conflict."
@@ -50,29 +48,18 @@ jobs:
             echo "Default setup is disabled; running advanced CodeQL."
           else
             echo "enabled=true" >> "$GITHUB_OUTPUT"
-            echo "Could not determine default setup state (state=$STATE); skipping advanced CodeQL defensively."
+            echo "Could not determine default setup state (state=${STATE}); skipping advanced CodeQL defensively."
           fi
 
       - name: Initialize CodeQL
         if: steps.default_setup.outputs.enabled != 'true'
-        uses: github/codeql-action/init@v4
+        uses: github/codeql-action/init@8aad20d150bbac5944a9f9d289da16a4b0d87c1e  # codeql-action@v4.36.2
         with:
           languages: ${{ matrix.language }}
           build-mode: ${{ matrix.build-mode }}
 
-      - name: Run manual build steps
-        if: matrix.build-mode == 'manual' && steps.default_setup.outputs.enabled != 'true'
-        shell: bash
-        run: |
-          echo 'If you are using a "manual" build mode for one or more of the' \
-            'languages you are analyzing, replace this with the commands to build' \
-            'your code, for example:'
-          echo "  make bootstrap"
-          echo "  make release"
-          exit 1
-
       - name: Perform CodeQL Analysis
         if: steps.default_setup.outputs.enabled != 'true'
-        uses: github/codeql-action/analyze@v4
+        uses: github/codeql-action/analyze@8aad20d150bbac5944a9f9d289da16a4b0d87c1e  # codeql-action@v4.36.2
         with:
           category: "/language:${{matrix.language}}"

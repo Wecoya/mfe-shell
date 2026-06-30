@@ -28,7 +28,7 @@
           "uid": "${datasource}"
         },
         "enable": true,
-        "expr": "ci_deployment_timestamp_seconds{namespace=\"$namespace\", cluster=\"$cluster\"} > 0",
+        "expr": "changes(ci_deployment_timestamp_seconds{env=\"$environment\"}[5m]) > 0",
         "hide": false,
         "iconColor": "green",
         "name": "Deployments",
@@ -42,7 +42,7 @@
           "uid": "${datasource}"
         },
         "enable": true,
-        "expr": "ci_deployment_failed_timestamp_seconds{namespace=\"$namespace\", cluster=\"$cluster\"} > 0",
+        "expr": "changes(ci_deployment_failed_timestamp_seconds{env=\"$environment\"}[5m]) > 0 and ci_deployment_failed_timestamp_seconds{env=\"$environment\"} > 0",
         "hide": false,
         "iconColor": "red",
         "name": "Failed Deploys",
@@ -56,7 +56,7 @@
           "uid": "${datasource}"
         },
         "enable": true,
-        "expr": "increase(kube_pod_container_status_restarts_total{namespace=\"$namespace\", cluster=\"$cluster\", container!~\"queue-proxy|istio-proxy\"}[2m]) > 0",
+        "expr": "increase(kube_pod_container_status_restarts_total{namespace=~\"$namespace\", cluster=\"$cluster\", container!~\"queue-proxy|istio-proxy\"}[2m]) > 0",
         "hide": false,
         "iconColor": "red",
         "name": "Container Restart",
@@ -67,7 +67,7 @@
     ]
   },
   "description": "nginx MFE metrics: request rate, error rate (from Loki), connections, pod restarts, resources",
-  "editable": false,
+  "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 1,
   "id": null,
@@ -332,7 +332,7 @@
       },
       "targets": [
         {
-          "expr": "time() - max(ci_deployment_timestamp_seconds{namespace=~\"$namespace\", cluster=\"$cluster\"})",
+          "expr": "time() - max(ci_deployment_timestamp_seconds{env=\"$environment\"})",
           "legendFormat": "Age",
           "refId": "A"
         }
@@ -918,8 +918,8 @@
       },
       {
         "current": {
-          "text": "",
-          "value": ""
+          "text": "psc-app-01",
+          "value": "psc-app-01"
         },
         "datasource": {
           "type": "prometheus",

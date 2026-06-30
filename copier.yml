@@ -1,36 +1,17 @@
 _min_copier_version: "9.0"
 _subdirectory: .
+_exclude:
+  - README.md
+  - scripts/rename.sh
 
-# Copier-managed files (regenerated on template-sync — backup custom edits first):
-#   .github/workflows/main.yml, pr.yml, promote.yml, agent-run.yml,
-#   bootstrap-repo.yml, codeql.yml, agent.yml,
-#   k8s/base/service-monitor.yaml,
-#   k8s/monitoring/dashboards/grafana-dashboard.json,
-#   k8s/monitoring/dashboards/kustomization.yaml
-#
-# Files NOT managed (repo-specific, never overwritten):
-#   src/, k8s/base/deployment.yaml, k8s/base/service.yaml,
-#   k8s/base/ingress.yaml, k8s/base/kustomization.yaml,
-#   k8s/overlays/**/kustomization.yaml,
-#   k8s/overlays/**/external-secret.yaml,
-#   nginx.conf, Dockerfile, .env
 _skip_if_exists:
   - k8s/base/deployment.yaml
-  - k8s/base/service.yaml
-  - k8s/base/ingress.yaml
-  - k8s/base/kustomization.yaml
-  - k8s/base/configmap.yaml
-  - k8s/base/network-policy.yaml
-  - k8s/base/namespace.yaml
-  - k8s/base/ghcr-pull-secret.yaml
-  - k8s/overlays/dev/kustomization.yaml
-  - k8s/overlays/staging/kustomization.yaml
-  - k8s/overlays/prod/kustomization.yaml
-  - k8s/overlays/dev/external-secret.yaml
-  - k8s/overlays/staging/external-secret.yaml
-  - k8s/overlays/prod/external-secret.yaml
-  - Dockerfile
-  - nginx.conf
+  - k8s/overlays/dev/patches/configmap.yaml
+  - k8s/overlays/staging/patches/configmap.yaml
+  - k8s/overlays/prod/patches/configmap.yaml
+  - .github/workflows/main.yml
+  - .github/workflows/pr.yml
+  - .github/workflows/promote.yml
   # ── Application code (NEVER overwrite on sync) ───────────────────────────
   - src/**
   - index.html
@@ -38,26 +19,44 @@ _skip_if_exists:
   - .env.example
   - trivy.yaml
   - .trivyignore
-_exclude:
-  - README.md
+  - CLAUDE.md                          # agent context — protected from overwrite
+
+_tasks:
+  - "kustomize build k8s/overlays/dev > /dev/null 2>&1 && echo '✓ k8s/overlays/dev builds OK' || echo '⚠  kustomize build k8s/overlays/dev failed — check manifests'"
+
+# Copier-managed files (regenerated on `copier update`):
+#   catalog-info.yaml, README.md, mkdocs.yml,
+#   docs/index.md, docs/ARCHITECTURE.md, docs/development.md,
+#   k8s/base/{configmap,service,kustomization,network-policy,service-monitor,prometheus-rule}.yaml,
+#   k8s/monitoring/dashboards/{grafana-dashboard.json,kustomization.yaml},
+#   k8s/overlays/*/kustomization.yaml, k8s/overlays/*/certificate.yaml,
+#   k8s/overlays/dev/resource-quota.yaml, k8s/overlays/*/patches/{ingress,prometheus-rule}.yaml
+# Not managed (repo-specific — listed in _skip_if_exists above, never overwritten):
+#   k8s/base/deployment.yaml, k8s/overlays/*/patches/configmap.yaml,
+#   .github/workflows/{main,pr,promote}.yml, nginx.conf, src/
+#
+# NOTE — sidecar on copier update: k8s/base/deployment.yaml is in _skip_if_exists, so
+#   the nginx-prometheus-exporter sidecar added at scaffold time will NOT be re-added by
+#   `copier update`. If the sidecar spec changes in a future template version, apply the
+#   update manually to the deployment.yaml in the target repo.
 
 repo_name:
   type: str
   help: Repository name (e.g. mfe-shell)
+  validator: "{% if not (repo_name | regex_search('^[a-z][a-z0-9-]{2,40}$')) %}repo_name must be lowercase kebab-case, 3–41 characters (e.g. mfe-shell){% endif %}"
 
 description:
   type: str
-  help: Short description of the application (shown in Backstage and catalog)
+  help: Short description of the MFE (shown in Backstage catalog)
 
-coverage_threshold:
-  type: int
-  default: 70
-  help: Minimum statement coverage percentage enforced in the PR quality gate
-
-node_version:
+owner:
   type: str
-  default: "22"
-  help: Node.js version used in CI quality and build steps
+  help: "Backstage owner group (e.g. wecoya/claims-team)"
+
+bounded_context:
+  type: str
+  help: "DDD bounded context name (e.g. claims, notifications). Used for system labeling and catalog tags. Must be lowercase kebab-case and must not duplicate template tags: typescript, vue, microfrontend."
+  validator: "{% if not (bounded_context | regex_search('^[a-z][a-z0-9-]+$')) %}bounded_context must be lowercase kebab-case (e.g. claims, notifications){% endif %}"
 
 managed_skills_source:
   type: str
