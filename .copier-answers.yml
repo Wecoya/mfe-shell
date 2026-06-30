@@ -1,5 +1,5 @@
 _src_path: gh:Wecoya/private-sovereign-cloud/apps/_templates/vue-mfe
-_commit: edc0ab594c5bab8df4a836ed1911a38e5ce77da8
+_commit: 86a4575e669ecf93989091854690a613137b9bfa
 repo_name: mfe-shell
 owner: wecoya/platform-team
 bounded_context: platform
