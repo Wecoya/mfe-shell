@@ -17,7 +17,7 @@ metadata:
     backstage.io/badge-url: "https://monitoring.plattform.wecoya.online/d/platform-ci-health/platform-ci-health?var-repo=Wecoya/mfe-shell"
     grafana/dashboard-selector: "mfe-mfe-shell"
     grafana/tag-selector: "mfe"
-    grafana.com/dashboard-overview: "https://monitoring.plattform.wecoya.online/d/mfe-mfe-shell/mfe-overview-e28094-mfe-shell?var-cluster=psc-app-01&var-namespace=mfe-shell&orgId=1&from=now-1h&to=now&timezone=browser&var-datasource=prometheus&var-loki_datasource=loki&var-environment=$__all&var-log_level=$__all&refresh=5m"
+    grafana.com/dashboard-overview: "https://monitoring.plattform.wecoya.online/d/mfe-mfe-shell/mfe-overview-e28094-mfe-shell?var-cluster=psc-app-01&var-namespace=$__all&orgId=1&from=now-1h&to=now&timezone=browser&var-datasource=prometheus&var-loki_datasource=loki&var-environment=$__all&var-log_level=$__all&refresh=5m"
   tags:
     - typescript
     - vue
@@ -27,7 +27,7 @@ metadata:
     - url: "https://github.com/Wecoya/mfe-shell"
       title: "GitHub Repository"
       icon: github
-    - url: "https://monitoring.plattform.wecoya.online/d/mfe-mfe-shell/mfe-overview-e28094-mfe-shell?var-cluster=psc-app-01&var-namespace=mfe-shell&orgId=1&from=now-1h&to=now&timezone=browser&var-datasource=prometheus&var-loki_datasource=loki&var-environment=$__all&var-log_level=$__all&refresh=5m"
+    - url: "https://monitoring.plattform.wecoya.online/d/mfe-mfe-shell/mfe-overview-e28094-mfe-shell?var-cluster=psc-app-01&var-namespace=$__all&orgId=1&from=now-1h&to=now&timezone=browser&var-datasource=prometheus&var-loki_datasource=loki&var-environment=$__all&var-log_level=$__all&refresh=5m"
       title: "App Dashboard"
       icon: dashboard
     - url: "https://monitoring.plattform.wecoya.online/d/platform-ci-health/platform-ci-health?var-repo=Wecoya%2Fmfe-shell&var-template=vue-mfe&var-branch=main&var-environment=$__all"
