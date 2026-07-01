@@ -15,6 +15,9 @@ on:
         required: true
         type: string
 
+permissions:
+  contents: write
+
 jobs:
   promote:
     uses: Wecoya/platform-actions/.github/workflows/reusable-promote.yml@main
@@ -22,3 +25,17 @@ jobs:
       target_env: ${{ inputs.target_env }}
       image_sha: ${{ inputs.image_sha }}
     secrets: inherit
+
+  push-metrics:
+    needs: promote
+    if: needs.promote.result == 'success' || needs.promote.result == 'failure'
+    uses: Wecoya/private-sovereign-cloud/.github/workflows/push-build-metrics.yml@main
+    with:
+      status: ${{ needs.promote.result }}
+      type: deploy
+      env: ${{ inputs.target_env }}
+      version: ${{ inputs.image_sha }}
+    secrets:
+      # push-build-metrics.yml only declares TAILSCALE_AUTHKEY; explicit passing
+      # (not `secrets: inherit`) limits secret exposure to what the callee needs.
+      TAILSCALE_AUTHKEY: ${{ secrets.TAILSCALE_AUTHKEY }}

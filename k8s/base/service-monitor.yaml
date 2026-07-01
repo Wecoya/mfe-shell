@@ -8,8 +8,9 @@
 # infra/app-cluster/prometheus-agent-app-cluster.yaml.
 #
 # Prerequisites:
-#   - nginx-prometheus-exporter sidecar exposes port "metrics" (9113) via stub_status
-#   - NetworkPolicy must allow ingress from monitoring namespace on port 9113 (see network-policy.yaml)
+#   - Deployment / Service exposes a port named "http"
+#   - App or sidecar exposes GET /metrics (nginx-prometheus-exporter or custom endpoint)
+#   - NetworkPolicy allows ingress from monitoring namespace (see network-policy.yaml)
 #
 apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
@@ -20,21 +21,16 @@ metadata:
     app.kubernetes.io/component: observability
     app.kubernetes.io/part-of: private-sovereign-cloud
     app.kubernetes.io/managed-by: argocd
-    release: prometheus  # must match serviceMonitorSelector in prometheus-agent-app-cluster
+    release: prometheus  # must match serviceMonitorSelector in Prometheus config
 spec:
-  # jobLabel sets the Prometheus `job` label to the value of this pod label.
-  # Without this, `job` defaults to "<namespace>/<ServiceMonitor-name>", which breaks
-  # Grafana dashboard queries that filter by job="$service".
-  jobLabel: app.kubernetes.io/name
   selector:
     matchLabels:
       app.kubernetes.io/name: mfe-shell
+      app.kubernetes.io/instance: mfe-shell
   endpoints:
-    - port: metrics
+    - port: http
       path: /metrics
       interval: 30s
       scheme: http
   namespaceSelector:
-    # Scrape across all environments (dev / staging / prod) — the selector above
-    # already limits targets to pods labelled app.kubernetes.io/name=mfe-shell.
     any: true
