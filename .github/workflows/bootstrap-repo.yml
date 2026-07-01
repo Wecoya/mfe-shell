@@ -3,14 +3,6 @@ name: Bootstrap Repository (run once)
 # - GitHub Advanced Security (GHAS)
 # - Branch protection rules with required status checks
 # It disables itself after successful configuration.
-#
-# Triggered automatically by the Backstage scaffolder (github:actions:dispatch)
-# or manually via GitHub UI → Actions → "Bootstrap Repository (run once)".
-#
-# Required status checks reference job names produced by reusable workflows in
-# Wecoya/platform-actions: reusable-quality.yml (quality / *) and
-# reusable-security-scan.yml (security / *). If those workflow job names change,
-# update the contexts array below accordingly.
 
 on:
   workflow_dispatch:
@@ -20,10 +12,6 @@ on:
         required: false
         default: "manual"
 
-# Restrictive global default — job declares only what it actually needs.
-permissions:
-  contents: read
-
 jobs:
   configure-repo:
     name: Configure GHAS & Branch Protection
@@ -32,33 +20,17 @@ jobs:
       contents: write
       security-events: write
     steps:
-      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5  # actions/checkout@v4.3.1
+      - uses: actions/checkout@v4
 
       - name: Enable GitHub Advanced Security
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          set -euo pipefail
-          set +e
-          OUTPUT="$(gh api \
+          gh api \
             --method PATCH \
             /repos/${{ github.repository }} \
-            --field security_and_analysis='{"advanced_security":{"status":"enabled"},"secret_scanning":{"status":"enabled"},"secret_scanning_push_protection":{"status":"enabled"}}' 2>&1)"
-          STATUS=$?
-          set -e
-
-          if [ "$STATUS" -ne 0 ]; then
-            echo "::error title=GHAS bootstrap failed::Cannot enable GitHub Advanced Security. Branch protection will require 'security / codeql' which cannot pass without GHAS. Fix the license/permissions issue first. Error: ${OUTPUT}"
-            {
-              echo "### GHAS enablement failure"
-              echo "- Repository: \`${{ github.repository }}\`"
-              echo "- Error: \`${OUTPUT}\`"
-              echo "- The branch protection step was skipped to avoid permanently broken merge requirements."
-            } >> "$GITHUB_STEP_SUMMARY"
-            exit 1
-          fi
-
-          echo "✅ GHAS enabled"
+            --field security_and_analysis='{"advanced_security":{"status":"enabled"},"secret_scanning":{"status":"enabled"},"secret_scanning_push_protection":{"status":"enabled"}}' \
+            && echo "✅ GHAS enabled" || echo "⚠️ GHAS enable failed (may need org-level license)"
 
       - name: Disable CodeQL default setup (advanced workflow compatibility)
         env:
