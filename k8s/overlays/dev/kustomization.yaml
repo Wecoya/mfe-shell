@@ -26,6 +26,13 @@ patches:
     target:
       kind: ConfigMap
       name: mfe-shell-config
+  - patch: |
+      - op: replace
+        path: /spec/template/metadata/annotations/kubectl.kubernetes.io~1restartedAt
+        value: "2026-07-06T18:00:00Z"
+    target:
+      kind: Deployment
+      name: mfe-shell
 
 labels:
   - pairs:

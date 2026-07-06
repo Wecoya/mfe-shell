@@ -35,7 +35,7 @@ spec:
         app.kubernetes.io/component: frontend
         app.kubernetes.io/part-of: wecoya-platform
       annotations:
-        kubectl.kubernetes.io/restartedAt: "2026-07-06T18:00:00Z"
+        kubectl.kubernetes.io/restartedAt: "2026-07-06T16:00:00Z"
     spec:
       automountServiceAccountToken: false
       imagePullSecrets:
