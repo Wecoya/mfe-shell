@@ -19,7 +19,7 @@ resources:
 
 images:
   - name: ghcr.io/wecoya/mfe-shell
-    newTag: main   # CI rewrites this to the actual SHA on each merge
+    newTag: "2084610"   # Last known working SHA; CI will rewrite on next successful build
 
 patches:
   - path: patches/configmap.yaml

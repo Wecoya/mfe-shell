@@ -23,9 +23,6 @@ metadata:
     app.kubernetes.io/managed-by: argocd
   annotations:
     argocd.argoproj.io/sync-wave: "10"
-    # Replace=true allows ArgoCD to delete+recreate this Deployment when spec.selector
-    # changes (immutable field). Without this, SSA mode has no --force escape hatch.
-    argocd.argoproj.io/sync-options: Replace=true
 spec:
   replicas: 1
   selector:
@@ -38,7 +35,7 @@ spec:
         app.kubernetes.io/component: frontend
         app.kubernetes.io/part-of: wecoya-platform
       annotations:
-        kubectl.kubernetes.io/restartedAt: "2026-07-06T16:00:00Z"
+        kubectl.kubernetes.io/restartedAt: "2026-07-06T18:00:00Z"
     spec:
       automountServiceAccountToken: false
       imagePullSecrets:
