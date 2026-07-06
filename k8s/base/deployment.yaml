@@ -23,9 +23,6 @@ metadata:
     app.kubernetes.io/managed-by: argocd
   annotations:
     argocd.argoproj.io/sync-wave: "10"
-    # Replace=true allows ArgoCD to delete+recreate this Deployment when spec.selector
-    # changes (immutable field). Without this, SSA mode has no --force escape hatch.
-    argocd.argoproj.io/sync-options: Replace=true
 spec:
   replicas: 1
   selector:
