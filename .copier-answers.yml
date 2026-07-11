@@ -1,12 +1,12 @@
 _src_path: gh:Wecoya/private-sovereign-cloud/apps/_templates/vue-mfe
-_commit: 626203dee27005abae8d3fc60a863f25757f1453
+_commit: 5d4535782a7d65abe9654b3af8578d60fa51eadc
 repo_name: mfe-shell
 owner: wecoya/platform-team
 bounded_context: platform
 description: Vue 3 microfrontend shell host app — Module Federation entry point
 coverage_threshold: 70
-node_version: '22'
+node_version: "22"
 managed_skills_source: private-sovereign-cloud/apps/_templates/shared-skills
 managed_skills:
-- repo-routing
-- skills-sync
+  - repo-routing
+  - skills-sync
