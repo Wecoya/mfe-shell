@@ -1,5 +1,5 @@
 _src_path: gh:Wecoya/private-sovereign-cloud/apps/_templates/vue-mfe
-_commit: 626203dee27005abae8d3fc60a863f25757f1453
+_commit: 9b22095f4f9e4962013736d7ff7cc49a600e4ecb
 repo_name: mfe-shell
 owner: wecoya/platform-team
 bounded_context: platform
@@ -8,5 +8,5 @@ coverage_threshold: 70
 node_version: '22'
 managed_skills_source: private-sovereign-cloud/apps/_templates/shared-skills
 managed_skills:
-- repo-routing
-- skills-sync
+  - repo-routing
+  - skills-sync
