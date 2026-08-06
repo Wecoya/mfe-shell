@@ -1,52 +1,45 @@
-# MFE Shell — Wecoya Platform
+# mfe-shell
 
-Micro-Frontend Shell Application for the Wecoya platform. Hosts domain-specific
-Vue.js MFEs (Claims, Fleet, Finance) via Vite Module Federation with Keycloak
-OIDC authentication.
+[![CI](https://github.com/Wecoya/mfe-shell/actions/workflows/main.yml/badge.svg)](https://github.com/Wecoya/mfe-shell/actions/workflows/main.yml)
+[![Backstage](https://img.shields.io/badge/Backstage-catalog-blue)](https://backstage.plattform.wecoya.online/catalog/default/component/mfe-shell)
 
-## Architecture
+A **Vue 3 Microfrontend** (Module Federation) in the Wecoya platform, served via Nginx.
 
-- **Framework**: Vue 3 + TypeScript + Vite
-- **Module Federation**: `@originjs/vite-plugin-federation` (host mode)
-- **Auth**: Keycloak OIDC (PKCE flow via `keycloak-js`)
-- **Deployment**: nginx:alpine container on Kubernetes (App Cluster)
-- **GitOps**: ArgoCD syncs from `k8s/overlays/<env>`
-
-## Development
+## Quick Start
 
 ```bash
+# Install dependencies
 npm install
-npm run dev        # Dev server at http://localhost:3000
-npm run build      # Production build
-npm run test       # Run tests
-npm run lint       # Lint code
-npm run typecheck  # TypeScript check
+
+# Start the Vite dev server (exposes the module at http://localhost:5173)
+npm run dev
 ```
 
-## Docker
+To run together with the shell app and other MFEs, start the `mfe-shell` repo's
+dev environment (see the `mfe-shell` repository README for instructions).
 
-```bash
-docker build -t mfe-shell:local .
-docker run -p 8080:8080 \
-  -e MFE_REMOTES='{"claims":"http://localhost:3001/remoteEntry.js"}' \
-  -e KEYCLOAK_URL="http://localhost:8180" \
-  mfe-shell:local
-```
+## Service Table
 
-## K8s Validation
+| Service | URL |
+|---|---|
+| MFE Dev Server | `http://localhost:5173` |
+| Backstage Catalog | [mfe-shell](https://backstage.plattform.wecoya.online/catalog/default/component/mfe-shell) |
+| ArgoCD | [mfe-shell-dev](https://gitops.plattform.wecoya.online/applications/mfe-shell-dev) |
+| Grafana | [CI Health](https://monitoring.plattform.wecoya.online/d/platform-ci-health/platform-ci-health?var-repo=Wecoya/mfe-shell) |
+| GitHub | [Wecoya/mfe-shell](https://github.com/Wecoya/mfe-shell) |
 
-```bash
-kustomize build k8s/overlays/dev | kubeconform -strict -kubernetes-version 1.29.0
-```
-
-## Configuration
-
-Remote MFE URLs and Keycloak settings are injected at container startup via
-environment variables (sourced from Kubernetes ConfigMap):
+## Environment Variables
 
 | Variable | Description | Default |
-|----------|-------------|---------|
-| `MFE_REMOTES` | JSON object of remote name→URL | `{}` |
-| `KEYCLOAK_URL` | Keycloak base URL | `https://auth.wecoya.de` |
-| `KEYCLOAK_REALM` | Keycloak realm name | `wecoya` |
-| `KEYCLOAK_CLIENT_ID` | OIDC client ID | `mfe-shell` |
+|---|---|---|
+| `VITE_API_BASE_URL` | Base URL for backend API calls | `http://localhost:3000` |
+| `VITE_KEYCLOAK_URL` | Keycloak auth endpoint | `http://localhost:8080` |
+
+Copy `.env.example` to `.env` and adjust values before starting.
+
+## Links
+
+- [Backstage Catalog](https://backstage.plattform.wecoya.online/catalog/default/component/mfe-shell)
+- [TechDocs](https://backstage.plattform.wecoya.online/docs/default/component/mfe-shell)
+- [ArgoCD (dev)](https://gitops.plattform.wecoya.online/applications/mfe-shell-dev)
+- [Grafana Dashboard](https://monitoring.plattform.wecoya.online/d/svc-mfe-shell/service-overview)
