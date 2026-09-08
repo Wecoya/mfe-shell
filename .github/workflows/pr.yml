@@ -4,6 +4,15 @@ on:
   pull_request:
     branches: [main]
 
+# NOTE: Cross-repo reusable workflow calls (Wecoya/platform-actions/...) fail with
+# startup_failure on pull_request events (bug #1445). Jobs are inlined until the root
+# cause in platform-actions is fixed. Revert once bug #1445 is resolved.
+
+# Intentional exclusions for the MFE pattern:
+# - openapi-contract: MFE repos have no backend server and expose no OpenAPI contract.
+# - codeql-mode-preflight / codeql.yml: No server-side TypeScript/Python surface to scan.
+# These exclusions are by design — they are NOT gaps to fill.
+
 permissions:
   actions: read
   contents: read
@@ -12,55 +21,273 @@ permissions:
   pull-requests: write
 
 jobs:
-  quality:
-    uses: Wecoya/platform-actions/.github/workflows/reusable-quality.yml@main
-    with:
-      coverage-threshold: 70
-      node-version: "22"
-    secrets: inherit
+  # ── Quality ─────────────────────────────────────────────────────────────────
 
-  codeql-mode-preflight:
+  format:
+    name: Format Check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+      - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
+        with:
+          node-version: '22'
+          cache: npm
+          registry-url: 'https://npm.pkg.github.com'
+          scope: '@wecoya'
+      - run: npm ci
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - run: npx prettier --check .
+
+  typecheck:
+    name: Type Check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+      - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
+        with:
+          node-version: '22'
+          cache: npm
+          registry-url: 'https://npm.pkg.github.com'
+          scope: '@wecoya'
+      - run: npm ci
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - run: npx tsc --noEmit
+
+  unit-tests:
+    name: Unit Tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+      - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
+        with:
+          node-version: '22'
+          cache: npm
+          registry-url: 'https://npm.pkg.github.com'
+          scope: '@wecoya'
+      - run: npm ci
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Run tests with coverage
+        env:
+          JEST_JUNIT_OUTPUT_DIR: test-results
+          JEST_JUNIT_OUTPUT_NAME: junit.xml
+        run: |
+          set -euo pipefail
+          npx jest \
+            --coverage \
+            --ci \
+            --reporters=default \
+            --reporters=jest-junit \
+            --coverageReporters=text \
+            --coverageReporters=lcov \
+            --coverageThreshold='{"global":{"statements":70}}'
+      - name: Upload test results
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        if: always()
+        with:
+          name: test-results
+          path: test-results/junit.xml
+      - name: Test summary
+        uses: dorny/test-reporter@df6247429542221bc30d46a036ee47af1102c451 # v2.7.0
+        if: always()
+        with:
+          name: Jest Test Results
+          path: test-results/junit.xml
+          reporter: jest-junit
+
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+      - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
+        with:
+          node-version: '22'
+          cache: npm
+          registry-url: 'https://npm.pkg.github.com'
+          scope: '@wecoya'
+      - run: npm ci
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: ESLint (SARIF)
+        run: npx eslint . --max-warnings 0 --format @microsoft/eslint-formatter-sarif --output-file eslint-results.sarif
+        continue-on-error: true
+      - name: Upload ESLint SARIF
+        uses: github/codeql-action/upload-sarif@8aad20d150bbac5944a9f9d289da16a4b0d87c1e # v4.36.2
+        if: always()
+        continue-on-error: true
+        with:
+          sarif_file: eslint-results.sarif
+          wait-for-processing: true
+      - name: ESLint (fail on errors)
+        run: npx eslint . --max-warnings 0
+
+  npm-audit:
+    name: Dependency Audit
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+      - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
+        with:
+          node-version: '22'
+          cache: npm
+          registry-url: 'https://npm.pkg.github.com'
+          scope: '@wecoya'
+      - run: npm ci
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - run: npm audit --audit-level=high
+
+  dependency-review:
+    name: Dependency Review
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+      - uses: actions/dependency-review-action@a1d282b36b6f3519aa1f3fc636f609c47dddb294 # v5.0.0
+        with:
+          fail-on-severity: high
+          comment-summary-in-pr: always
+          allow-unknown-licenses: true
+
+  secret-scan:
+    name: Secret Scan
+    runs-on: ubuntu-latest
+    permissions:
+      actions: read
+      contents: read
+      security-events: write
+    steps:
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+        with:
+          fetch-depth: 0
+      - name: Install Gitleaks binary
+        run: |
+          GITLEAKS_VERSION="8.24.3"
+          curl -sSL -o /tmp/gitleaks.tar.gz "https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}/gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz"
+          tar -xzf /tmp/gitleaks.tar.gz -C /tmp
+          chmod +x /tmp/gitleaks
+          echo "/tmp" >> "$GITHUB_PATH"
+      - name: Run Gitleaks
+        run: |
+          gitleaks detect \
+            --redact \
+            --verbose \
+            --exit-code=2 \
+            --report-format=sarif \
+            --report-path=gitleaks-results.sarif \
+            --log-level=info \
+            --log-opts="origin/main"
+      - name: Upload Gitleaks SARIF
+        if: always()
+        continue-on-error: true
+        uses: github/codeql-action/upload-sarif@8aad20d150bbac5944a9f9d289da16a4b0d87c1e # v4.36.2
+        with:
+          sarif_file: gitleaks-results.sarif
+          category: gitleaks
+
+  # ── Security scan (runs after quality gate passes) ───────────────────────────
+
+  container-scan:
+    name: Container Scan
+    needs:
+      [
+        format,
+        typecheck,
+        unit-tests,
+        lint,
+        npm-audit,
+        dependency-review,
+        secret-scan,
+      ]
     runs-on: ubuntu-latest
     permissions:
       contents: read
       security-events: write
     steps:
-      - name: Verify advanced CodeQL compatibility
-        uses: actions/github-script@f28e40c7f34bde8b3046d885e986cb6290c5673b # v7
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@d7f5e7f509e45cec5c76c4d5afdd7de93d0b3df5 # v4.1.0
+      - name: Build image for scanning
+        uses: docker/build-push-action@f9f3042f7e2789586610d6e8b85c8f03e5195baf # v7.2.0
         with:
-          # Informational only — never blocks the PR. See main.yml for full rationale.
-          script: |
-            const owner = context.repo.owner;
-            const repo = context.repo.repo;
-            try {
-              const response = await github.request("GET /repos/{owner}/{repo}/code-scanning/default-setup", {
-                owner,
-                repo,
-                headers: { "X-GitHub-Api-Version": "2022-11-28" }
-              });
-              const state = response.data?.state ?? "unknown";
-              const languages = response.data?.languages ?? [];
-              core.info(`Code scanning default setup state: ${state} (languages: ${languages.join(", ") || "none"})`);
-              if (state !== "not-configured") {
-                const message = `Code scanning default setup is '${state}' (languages: ${languages.join(", ") || "none"}). codeql.yml will detect this at runtime and skip overlapping language matrix entries to avoid SARIF conflicts. To fully migrate to the advanced workflow, an org admin can disable default setup in repository settings.`;
-                core.warning(message);
-                await core.summary.addHeading("CodeQL mode: coexistence detected").addRaw(message).write();
-              }
-            } catch (error) {
-              if (error.status === 404 || error.status === 403) {
-                core.info(`Code scanning default setup endpoint returned ${error.status}; treating as not configured — informational only.`);
-                return;
-              }
-              const message = `Could not verify CodeQL mode compatibility (HTTP ${error.status ?? "unknown"}): ${error.message}. Informational only, build will proceed.`;
-              core.warning(message);
-              await core.summary.addHeading("CodeQL mode compatibility check skipped").addRaw(message).write();
-            }
+          context: .
+          push: false
+          load: true
+          tags: scan-target:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          secrets: |
+            NODE_AUTH_TOKEN=${{ secrets.GITHUB_TOKEN }}
+      - name: Install Trivy CLI
+        uses: aquasecurity/setup-trivy@81e514348e19b6112ce2a7e3ecbafe19c1e1f567 # v0.3.1
+      - name: Run Trivy container scan
+        run: |
+          IGNORE_ARGS=()
+          if [ -f .trivyignore ]; then
+            IGNORE_ARGS=(--ignorefile .trivyignore)
+          fi
+          trivy image scan-target:latest \
+            --scanners vuln \
+            --severity HIGH,CRITICAL \
+            --format sarif \
+            --output trivy-container.sarif \
+            --exit-code 1 \
+            "${IGNORE_ARGS[@]}"
+      - name: Upload container scan SARIF
+        uses: github/codeql-action/upload-sarif@8aad20d150bbac5944a9f9d289da16a4b0d87c1e # v4.36.2
+        if: always()
+        continue-on-error: true
+        with:
+          sarif_file: trivy-container.sarif
+          category: trivy-container
 
-
-  security:
-    needs: [quality, codeql-mode-preflight]
-    uses: Wecoya/platform-actions/.github/workflows/reusable-security-scan.yml@main
-    with:
-      scan-dockerfile: true
-      iac-dirs: "k8s/"
-    secrets: inherit
+  iac-scan:
+    name: IaC Scan
+    needs:
+      [
+        format,
+        typecheck,
+        unit-tests,
+        lint,
+        npm-audit,
+        dependency-review,
+        secret-scan,
+      ]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write
+    steps:
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+      - name: Check IaC directories exist
+        id: dir-check
+        run: |
+          if [ -d "k8s/" ]; then
+            echo "found=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "found=false" >> "$GITHUB_OUTPUT"
+            echo "k8s/ directory not found, skipping IaC scan."
+          fi
+      - name: Run Trivy IaC scan
+        if: ${{ steps.dir-check.outputs.found == 'true' }}
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        with:
+          scan-type: config
+          scan-ref: k8s/
+          format: sarif
+          output: trivy-iac.sarif
+          severity: HIGH,CRITICAL
+          exit-code: 1
+          limit-severities-for-sarif: true
+      - name: Upload IaC scan SARIF
+        uses: github/codeql-action/upload-sarif@8aad20d150bbac5944a9f9d289da16a4b0d87c1e # v4.36.2
+        if: ${{ always() && steps.dir-check.outputs.found == 'true' }}
+        continue-on-error: true
+        with:
+          sarif_file: trivy-iac.sarif
+          category: trivy-iac

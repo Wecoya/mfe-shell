@@ -3,14 +3,26 @@ name: Bootstrap Repository (run once)
 # - GitHub Advanced Security (GHAS)
 # - Branch protection rules with required status checks
 # It disables itself after successful configuration.
+#
+# Triggered automatically by the Backstage scaffolder (github:actions:dispatch)
+# or manually via GitHub UI → Actions → "Bootstrap Repository (run once)".
+#
+# Required status checks reference job names produced by reusable workflows in
+# Wecoya/platform-actions: reusable-quality.yml (quality / *) and
+# reusable-security-scan.yml (security / *). If those workflow job names change,
+# update the contexts array below accordingly.
 
 on:
   workflow_dispatch:
     inputs:
       trigger:
-        description: "Auto-triggered by Backstage scaffolder"
+        description: 'Auto-triggered by Backstage scaffolder'
         required: false
-        default: "manual"
+        default: 'manual'
+
+# Restrictive global default — job declares only what it actually needs.
+permissions:
+  contents: read
 
 jobs:
   configure-repo:
@@ -20,21 +32,56 @@ jobs:
       contents: write
       security-events: write
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # actions/checkout@v4.3.1
+
+      # GITHUB_TOKEN cannot be granted repo-admin rights via `permissions:` -- there is
+      # no such scope. Mint a real admin-capable token from the org's GitHub App instead.
+      - name: Generate GitHub App token
+        id: app-token
+        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
+        with:
+          app-id: ${{ secrets.GH_APP_ID }}
+          private-key: ${{ secrets.GH_APP_PRIVATE_KEY }}
+          owner: Wecoya
+          repositories: ${{ github.event.repository.name }}
 
       - name: Enable GitHub Advanced Security
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
         run: |
-          gh api \
+          set -euo pipefail
+          set +e
+          OUTPUT="$(gh api \
             --method PATCH \
             /repos/${{ github.repository }} \
-            --field security_and_analysis='{"advanced_security":{"status":"enabled"},"secret_scanning":{"status":"enabled"},"secret_scanning_push_protection":{"status":"enabled"}}' \
-            && echo "✅ GHAS enabled" || echo "⚠️ GHAS enable failed (may need org-level license)"
+            --field security_and_analysis='{"advanced_security":{"status":"enabled"},"secret_scanning":{"status":"enabled"},"secret_scanning_push_protection":{"status":"enabled"}}' 2>&1)"
+          STATUS=$?
+          set -e
+
+          if [ "$STATUS" -ne 0 ]; then
+            echo "::error title=GHAS bootstrap failed::Cannot enable GitHub Advanced Security. Branch protection will require 'security / codeql' which cannot pass without GHAS. Fix the license/permissions issue first. Error: ${OUTPUT}"
+            {
+              echo "### GHAS enablement failure"
+              echo "- Repository: \`${{ github.repository }}\`"
+              echo "- Error: \`${OUTPUT}\`"
+              echo "- The branch protection step was skipped to avoid permanently broken merge requirements."
+            } >> "$GITHUB_STEP_SUMMARY"
+            exit 1
+          fi
+
+          echo "✅ GHAS enabled"
 
       - name: Disable CodeQL default setup (advanced workflow compatibility)
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+        # GITHUB_TOKEN/App cannot toggle code-scanning default setup unless granted
+        # `Administration: write` (403), or the org enforces a locked-in GHAS security
+        # configuration for this repo (422 "cannot be modified ... controlled by
+        # organization administrators" -- confirmed live, not just hypothetical).
+        # codeql.yml has a runtime fallback that detects default-setup state and skips
+        # overlapping language matrix entries. We log the situation so an admin can
+        # disable default setup manually if desired, but we do NOT fail the bootstrap --
+        # branch protection still needs to be applied.
         run: |
           set -euo pipefail
           set +e
@@ -46,22 +93,27 @@ jobs:
           set -e
 
           if [ "$STATUS" -ne 0 ]; then
-            echo "::error title=CodeQL bootstrap failed::Unable to disable CodeQL default setup. ${OUTPUT}"
+            echo "::warning title=CodeQL default setup not disabled::${OUTPUT}"
             {
-              echo "### CodeQL bootstrap failure"
+              echo "### CodeQL default setup remains active"
               echo "- Repository: \`${{ github.repository }}\`"
-              echo "- Error: \`${OUTPUT}\`"
-              echo "- Required permission: \`security-events: write\` on \`GITHUB_TOKEN\`"
+              echo "- API response: \`${OUTPUT}\`"
+              echo "- Expected when \`GITHUB_TOKEN\`/App lacks \`Administration: write\`, or when"
+              echo "  the org enforces a locked GHAS security configuration for this repo."
+              echo "- The advanced CodeQL workflow (\`codeql.yml\`) detects default-setup at runtime"
+              echo "  and skips conflicting language matrix entries, so no action is required."
+              echo "- To fully migrate to the advanced workflow, an org admin can disable default"
+              echo "  setup via repository Settings → Code security → Code scanning, or exempt"
+              echo "  this repo from the org's enforced security configuration."
             } >> "$GITHUB_STEP_SUMMARY"
-            exit 1
+          else
+            STATE="$(gh api /repos/${{ github.repository }}/code-scanning/default-setup --jq '.state' 2>/dev/null || echo unknown)"
+            echo "✅ CodeQL default setup state after bootstrap: ${STATE}"
           fi
-
-          STATE="$(gh api /repos/${{ github.repository }}/code-scanning/default-setup --jq '.state' 2>/dev/null || echo unknown)"
-          echo "✅ CodeQL default setup state after bootstrap: ${STATE}"
 
       - name: Configure branch protection on main
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
         run: |
           gh api \
             --method PUT \
@@ -90,7 +142,7 @@ jobs:
 
       - name: Disable this bootstrap workflow
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
         run: |
           gh workflow disable "Bootstrap Repository (run once)" \
             && echo "✅ Bootstrap workflow disabled" || true
