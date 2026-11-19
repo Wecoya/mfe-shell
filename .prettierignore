@@ -1,0 +1,19 @@
+dist/
+node_modules/
+coverage/
+*.jinja
+copier.yml
+.copier-answers.yml
+catalog-info.yaml
+mkdocs.yml
+# @wecoya/skills managed-start
+# Installer-managed files — formatted per platform conventions, not this repo's Prettier config
+.github/skills/
+.claude/skills/
+.claude/commands/
+.claude/agents/
+.claude/settings.json
+CLAUDE.md
+AGENTS.md
+*.toml
+# @wecoya/skills managed-end

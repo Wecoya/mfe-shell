@@ -18,4 +18,3 @@ resources:
   - network-policy.yaml
   - service-monitor.yaml
   - prometheus-rule.yaml
-  - ghcr-pull-secret.yaml

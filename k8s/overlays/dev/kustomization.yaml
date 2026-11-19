@@ -19,20 +19,13 @@ resources:
 
 images:
   - name: ghcr.io/wecoya/mfe-shell
-    newTag: "2084610"   # Last known working SHA; CI will rewrite on next successful build
+    newTag: main   # CI rewrites this to the actual SHA on each merge
 
 patches:
   - path: patches/configmap.yaml
     target:
       kind: ConfigMap
       name: mfe-shell-config
-  - patch: |
-      - op: replace
-        path: /spec/template/metadata/annotations/kubectl.kubernetes.io~1restartedAt
-        value: "2026-07-06T18:00:00Z"
-    target:
-      kind: Deployment
-      name: mfe-shell
 
 labels:
   - pairs:
